@@ -36,13 +36,11 @@ NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
 void setup() {
     //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
     NoU3.begin();
-    PestoLink.begin("NoU3_Bluetooth");
+    PestoLink.begin("Sliver24v2");
     Serial.begin(115200);
 
-    frontLeftMotor.setInverted(false);
-    frontRightMotor.setInverted(true);
-    rearLeftMotor.setInverted(false);
-    rearRightMotor.setInverted(true);
+    leftMotor.setInverted(true);
+    rightMotor.setInverted(false);
 }
 
 void loop() {
