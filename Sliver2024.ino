@@ -16,13 +16,15 @@ NoU_Motor rightMotor(8);
 // NoU_Motor rightFlywheel(6);
 
 // Intake: for picking up notes
+NoU_Servo intakeServo(2);
+    float intakeStartAngle = 0;
 // NoU_Motor intakeMotor(7);
 
 // Aiming: these are for aiming the shooter left/right and up/down
 NoU_Servo xAlignServo(1);
     float xStartAngle = 180;
-// NoU_Servo yAlignServo(2);
-//     float yStowAngle = 60;
+NoU_Servo yAlignServo(3);
+    float yStowAngle = 60;
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
 // NoU_Servo distanceSensorServo(3);
@@ -48,7 +50,12 @@ void loop() {
     // This measures your batteries voltage and sends it to PestoLink
     // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
     float batteryVoltage = NoU3.getBatteryVoltage();
-    PestoLink.printBatteryVoltage(getYaw());
+    PestoLink.printBatteryVoltage(batteryVoltage);
+
+    // Print gyro values
+    char result[8];
+    dtostrf(getYaw(), 6, 2, result);
+    PestoLink.print(result);
 
     // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
     if (PestoLink.update()) {
@@ -61,17 +68,30 @@ void loop() {
     }
 
     // Here we decide what the servo angle will be based on if button 0 is pressed
-    int servoAngle = 0;
+    int xServoAngle = 0;
+    int yServoAngle = 60;
+    int intakeAngle = 0;
 
     if (PestoLink.keyHeld(shootKey)) {
-        servoAngle = 0;
+        xServoAngle = 0;
     }
     else {
-        servoAngle = 180;
+        xServoAngle = 180;
+    }
+
+    if (PestoLink.keyHeld(intakeKey)) {
+        yServoAngle = 120;
+        intakeAngle = 120;
+    }
+    else {
+        yServoAngle = 180;
+        intakeAngle = 0;
     }
 
     // Here we set the drivetrain motor speeds and servo angle based on what we found in the above code
-    xAlignServo.write(servoAngle);
+    xAlignServo.write(xServoAngle);
+    yAlignServo.write(yServoAngle);
+    intakeServo.write(intakeAngle);
 
     // No need to mess with this code
     PestoLink.update();
@@ -80,8 +100,8 @@ void loop() {
 }
 
 void drive() {
-  float throttle = -PestoLink.getAxis(1);
-  float rotation = PestoLink.getAxis(0);
+  float throttle = PestoLink.getAxis(1);
+  float rotation = -PestoLink.getAxis(0);
   
   drivetrain.arcadeDrive(throttle, rotation);
 }
@@ -90,6 +110,7 @@ void drive() {
 float getYaw() {
   // TODO: check if this is the right axis
   return -NoU3.gyroscope_z;
+  //return -NoU3.magnetometer_z;
 }
 
 // Moves the shooter to aim directly towards the alliance wall.
