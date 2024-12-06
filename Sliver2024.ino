@@ -35,6 +35,17 @@ NoU_Servo yAlignServo(3);
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
 
+// GYRO
+float yaw_gyro_deg = 0;
+float yaw_mag_deg = 0;
+float wrapped_yaw_mag_deg = 0;
+float yaw = 0;
+
+const float alpha = 0.98; // Complementary filter weighting
+unsigned long lastTime = 0;
+
+float gyro_z_offset_degrees = 0.444;
+
 void setup() {
     //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
     NoU3.begin();
@@ -52,11 +63,6 @@ void loop() {
     float batteryVoltage = NoU3.getBatteryVoltage();
     PestoLink.printBatteryVoltage(batteryVoltage);
 
-    // Print gyro values
-    char result[8];
-    dtostrf(getYaw(), 6, 2, result);
-    PestoLink.print(result);
-
     // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
     if (PestoLink.update()) {
         
@@ -66,6 +72,13 @@ void loop() {
     } else {
         NoU3.setServiceLight(LIGHT_DISABLED);
     }
+
+    updateGyro();
+
+    // Print gyro values
+    char result[8];
+    dtostrf(yaw, 6, 2, result);
+    PestoLink.print(result);
 
     // Here we decide what the servo angle will be based on if button 0 is pressed
     int xServoAngle = 0;
@@ -154,3 +167,60 @@ float getTargetShooterAngle() {
 //     float targetAngle = getTargetShooterAngle();
 //     yAlignServo.write(yStowAngle);
 // }
+
+void updateGyro() {
+    if (NoU3.updateIMUs()) {
+
+        unsigned long currentTime = millis();
+        float dt = (currentTime - lastTime) / 1000.0;
+        lastTime = currentTime;
+
+        // Gyroscope yaw update
+        yaw_gyro_deg += (NoU3.gyroscope_z - gyro_z_offset_degrees) * dt;
+
+        // Magnetometer yaw
+        yaw_mag_deg = -1 * degrees(atan2(NoU3.magnetometer_y, NoU3.magnetometer_x));
+
+        // Wrap Magnetometer yaw
+        wrapped_yaw_mag_deg = wrapYaw(yaw_mag_deg);
+
+        // Apply complementary filter with drift compensation
+        yaw = alpha * (yaw_gyro_deg) + (1 - alpha) * wrapped_yaw_mag_deg;
+
+        // Print results
+        Serial.print("yaw_gyro_deg: ");
+        Serial.print(yaw_gyro_deg);
+        Serial.print(" wrapped_yaw_mag_deg: ");
+        Serial.print(wrapped_yaw_mag_deg);
+        Serial.print(" Yaw: ");
+        Serial.print(yaw);
+        
+        Serial.println(" ");
+
+  }
+}
+
+float wrapYaw(float currentYaw) {
+  static bool isInitialized = false;
+  static int rotations = 0;
+  static float previousYaw = 0;
+
+  if(isInitialized == false){
+    previousYaw = currentYaw;
+    isInitialized = true;
+  }
+
+    // Check for wrapping
+    if (currentYaw - previousYaw > 180.0) {
+        rotations--; // Wrapped from -180 to 180
+    } else if (currentYaw - previousYaw < -180.0) {
+        rotations++; // Wrapped from 180 to -180
+    }
+
+    // Wrap the yaw angle between -180 and 180
+    float wrappedYaw = currentYaw + rotations * 360.0;
+
+    previousYaw = currentYaw;
+
+    return wrappedYaw;
+}
