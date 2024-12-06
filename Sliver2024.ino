@@ -8,10 +8,8 @@ Key shootKey = Key::I;
 Key intakeKey = Key::J;
 
 // Drivetrain Motors
-NoU_Motor frontLeftMotor(1);
-NoU_Motor frontRightMotor(2);
-NoU_Motor rearLeftMotor(3);
-NoU_Motor rearRightMotor(4);
+NoU_Motor leftMotor(1);
+NoU_Motor rightMotor(8);
 
 // Flywheels: for launching notes
 // NoU_Motor leftFlywheel(5);
@@ -33,7 +31,7 @@ NoU_Servo xAlignServo(1);
 //     float sensorAutoAngle = 90;
 
 // The Drivetrain object handles the arcade drive math for us
-NoU_Drivetrain drivetrain(&frontLeftMotor, &frontRightMotor, &rearLeftMotor, &rearRightMotor);
+NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
 
 void setup() {
     //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
