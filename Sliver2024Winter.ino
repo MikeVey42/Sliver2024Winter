@@ -4,27 +4,33 @@
 
 // KEYBINDS
 Key startAutoKey = Key::Digit0;
-Key shootKey = Key::I;
+Key aimKey = Key::I;
+Key fireKey = Key::U;
 Key intakeKey = Key::J;
+Key ampKey = Key::O;
 
 // Drivetrain Motors
 NoU_Motor leftMotor(1);
 NoU_Motor rightMotor(8);
 
 // Flywheels: for launching notes
-// NoU_Motor leftFlywheel(5);
-// NoU_Motor rightFlywheel(6);
+NoU_Motor leftFlywheel(2);
+NoU_Motor rightFlywheel(7);
+
+NoU_Motor indexerMotor(6);
 
 // Intake: for picking up notes
 NoU_Servo intakeServo(2);
     float intakeStartAngle = 0;
-// NoU_Motor intakeMotor(7);
+NoU_Motor intakeMotor(3);
+
 
 // Aiming: these are for aiming the shooter left/right and up/down
 NoU_Servo xAlignServo(1);
-    float xStartAngle = 180;
+    float xStartAngle = -10;
 NoU_Servo yAlignServo(3);
-    float yStowAngle = 60;
+    float yStowAngle = 160;
+    float yMeasureAngle = 160;
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
 // NoU_Servo distanceSensorServo(3);
@@ -45,6 +51,12 @@ const float alpha = 0.98; // Complementary filter weighting
 unsigned long lastTime = 0;
 
 float gyro_z_offset_degrees = -0.14;
+
+boolean firing = false;
+unsigned long fireTime = 0;
+
+boolean amp = false;
+unsigned long ampTime = 0;
 
 void setup() {
     //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
@@ -75,37 +87,7 @@ void loop() {
 
     updateGyro();
 
-    // Print gyro values
-    char result[8];
-    dtostrf(wrapped_yaw_mag_deg, 6, 2, result);
-    PestoLink.print(result);
-
-    // Here we decide what the servo angle will be based on if button 0 is pressed
-    int xServoAngle = 0;
-    int yServoAngle = 60;
-    int intakeAngle = 0;
-
-    if (PestoLink.keyHeld(shootKey)) {
-        xServoAngle = 0;
-    }
-    else {
-        xServoAngle = 180;
-    }
-
-    if (PestoLink.keyHeld(intakeKey)) {
-        yServoAngle = 120;
-        intakeAngle = 120;
-    }
-    else {
-        yServoAngle = 180;
-        intakeAngle = 0;
-    }
-
-    // Here we set the drivetrain motor speeds and servo angle based on what we found in the above code
-    xAlignServo.write(xServoAngle);
-    yAlignServo.write(yServoAngle);
-    intakeServo.write(intakeAngle);
-
+    turretControl();
     // No need to mess with this code
     PestoLink.update();
     NoU3.updateServiceLight();
@@ -119,10 +101,37 @@ void drive() {
   drivetrain.arcadeDrive(throttle, rotation);
 }
 
+void turretControl() {
+  if (PestoLink.keyHeld(fireKey)) {
+    prepareToShoot();
+    fire();
+  }else {
+    firing = false;
+    indexerMotor.set(0);
+    if (PestoLink.keyHeld(aimKey)) {
+      prepareToMeasure();
+      leftFlywheel.set(0);
+      rightFlywheel.set(0);
+    }
+    else if (PestoLink.keyHeld(intakeKey)) {
+      intake();
+    }
+    else {
+      if (PestoLink.keyHeld(ampKey)) {
+        doAmp();
+      }else {
+        stow();
+        leftFlywheel.set(0);
+        rightFlywheel.set(0);
+      }
+    }
+  }
+}
+
 // Returns the yaw in degrees, CCW positive, from -180 to 180
 float getYaw() {
   // TODO: check if this is the right axis
-  return -NoU3.gyroscope_z;
+  return yaw;
   //return -NoU3.magnetometer_z;
 }
 
@@ -131,10 +140,15 @@ float getYaw() {
 float xAlignWithSpeaker() {
     float currentYaw = getYaw();
     float targetAngle = (xStartAngle - currentYaw);
-    if (targetAngle > 0 && targetAngle < 180) {
+    // Print gyro values
+    char result[8];
+    dtostrf(currentYaw, 6, 2, result);
+    PestoLink.print(result);
+    if (targetAngle > -10 && targetAngle < 190) {
         xAlignServo.write(targetAngle);
         return true;
     }else {
+        xAlignServo.write(0);
         return false;
     }
 }
@@ -149,24 +163,70 @@ float getDistance() {
 float getTargetShooterAngle() {
     // unimplemented
     float distance = getDistance();
-    return 0;
+    return 190;
 }
 
-// void stow() {
-//     yAlignServo.write(yStowAngle);
-//     xAlignServo.write(0)
-//     distanceSensorServo.write(sensorStowAngle);
-// }
+void stow() {
+    yAlignServo.write(yStowAngle);
+    xAlignServo.write(180);
+    //distanceSensorServo.write(sensorStowAngle);
+    intakeServo.write(0);
+    intakeMotor.set(0);
+    indexerMotor.set(0);
+}
 
-// void prepareToMeasure() {
-//     yStowAngle.write(yStowAngle);
-//     distanceSensorServo.write(sensorMeasureAngle);
-// }
+void intake() {
+  xAlignServo.write(180);
+  yAlignServo.write(120);
+  intakeServo.write(120);
+  intakeMotor.set(-1);
+  leftFlywheel.set(1);
+  rightFlywheel.set(1);
+  indexerMotor.set(-1);
+}
 
-// void prepareToShoot() {
-//     float targetAngle = getTargetShooterAngle();
-//     yAlignServo.write(yStowAngle);
-// }
+void prepareToMeasure() {
+  xAlignWithSpeaker();
+  yAlignServo.write(yMeasureAngle);
+  // distanceSensorServo.write(sensorMeasureAngle);
+  indexerMotor.set(0);
+}
+
+void prepareToShoot() {
+    xAlignWithSpeaker();
+    float targetAngle = getTargetShooterAngle();
+    yAlignServo.write(targetAngle);
+    leftFlywheel.set(-1);
+    rightFlywheel.set(-0.5);
+}
+
+void fire() {
+  if (firing) {
+    if (millis() - fireTime > 1500) {
+      indexerMotor.set(1);
+    }
+  }else {
+    firing = true;
+    fireTime = millis();
+    indexerMotor.set(0);
+  }
+}
+
+void doAmp() {
+  xAlignServo.write(xStartAngle);
+  yAlignServo.write(175);
+  leftFlywheel.set(-0.5);
+  rightFlywheel.set(-0.5);
+  if (amp) {
+    if (millis() - ampTime > 1500) {
+      indexerMotor.set(1);
+    }
+  }else {
+    amp = true;
+    ampTime = millis();
+    indexerMotor.set(0);
+  }
+}
 
 void updateGyro() {
     if (NoU3.updateIMUs()) {
@@ -182,20 +242,20 @@ void updateGyro() {
         yaw_mag_deg = -1 * degrees(atan2(NoU3.magnetometer_y, NoU3.magnetometer_x));
 
         // Wrap Magnetometer yaw
-        wrapped_yaw_mag_deg = wrapYaw(yaw_mag_deg);
+        //wrapped_yaw_mag_deg = wrapYaw(yaw_mag_deg);
 
         // Apply complementary filter with drift compensation
-        yaw = alpha * (yaw_gyro_deg) + (1 - alpha) * wrapped_yaw_mag_deg;
+        yaw = wrapYaw(yaw_gyro_deg);
 
-        // Print results
-        Serial.print("yaw_gyro_deg: ");
-        Serial.print(yaw_gyro_deg);
-        Serial.print(" wrapped_yaw_mag_deg: ");
-        Serial.print(wrapped_yaw_mag_deg);
-        Serial.print(" Yaw: ");
-        Serial.print(yaw);
+        // // Print results
+        // Serial.print("yaw_gyro_deg: ");
+        // Serial.print(yaw_gyro_deg);
+        // Serial.print(" wrapped_yaw_mag_deg: ");
+        // Serial.print(wrapped_yaw_mag_deg);
+        // Serial.print(" Yaw: ");
+        // Serial.print(yaw);
         
-        Serial.println(" ");
+        // Serial.println(" ");
 
   }
 }
