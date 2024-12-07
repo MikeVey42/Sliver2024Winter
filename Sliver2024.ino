@@ -44,7 +44,7 @@ float yaw = 0;
 const float alpha = 0.98; // Complementary filter weighting
 unsigned long lastTime = 0;
 
-float gyro_z_offset_degrees = 0.444;
+float gyro_z_offset_degrees = -0.14;
 
 void setup() {
     //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
@@ -61,7 +61,7 @@ void loop() {
     // This measures your batteries voltage and sends it to PestoLink
     // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
     float batteryVoltage = NoU3.getBatteryVoltage();
-    PestoLink.printBatteryVoltage(batteryVoltage);
+    //PestoLink.printBatteryVoltage(batteryVoltage);
 
     // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
     if (PestoLink.update()) {
@@ -77,7 +77,7 @@ void loop() {
 
     // Print gyro values
     char result[8];
-    dtostrf(yaw, 6, 2, result);
+    dtostrf(wrapped_yaw_mag_deg, 6, 2, result);
     PestoLink.print(result);
 
     // Here we decide what the servo angle will be based on if button 0 is pressed
