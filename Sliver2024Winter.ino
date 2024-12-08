@@ -7,6 +7,7 @@ Key startAutoKey = Key::Digit0;
 Key aimKey = Key::I;
 Key fireKey = Key::U;
 Key intakeKey = Key::J;
+Key revIntakeKey = Key::H;
 Key ampKey = Key::O;
 
 // Drivetrain Motors
@@ -96,7 +97,7 @@ void loop() {
 
 void drive() {
   float throttle = PestoLink.getAxis(1);
-  float rotation = -PestoLink.getAxis(0);
+  float rotation = 0.9 * -PestoLink.getAxis(0);
   
   drivetrain.arcadeDrive(throttle, rotation);
 }
@@ -115,12 +116,15 @@ void turretControl() {
     }
     else if (PestoLink.keyHeld(intakeKey)) {
       intake();
+    } else if (PestoLink.keyHeld(revIntakeKey)) {
+      revIntake();
     }
     else {
       if (PestoLink.keyHeld(ampKey)) {
         doAmp();
       }else {
         stow();
+        amp = false;
         leftFlywheel.set(0);
         rightFlywheel.set(0);
       }
@@ -179,10 +183,15 @@ void intake() {
   xAlignServo.write(180);
   yAlignServo.write(120);
   intakeServo.write(120);
-  intakeMotor.set(-1);
+  intakeMotor.set(1);
   leftFlywheel.set(1);
   rightFlywheel.set(1);
   indexerMotor.set(-1);
+}
+
+void revIntake() {
+  intakeServo.write(60);
+  intakeMotor.set(-1);
 }
 
 void prepareToMeasure() {
