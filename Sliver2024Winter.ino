@@ -15,7 +15,7 @@ NoU_Motor leftMotor(1);
 NoU_Motor rightMotor(8);
 
 // Flywheels: for launching notes
-NoU_Motor leftFlywheel(2);
+NoU_Motor leftFlywheel(5);
 NoU_Motor rightFlywheel(7);
 
 NoU_Motor indexerMotor(6);
@@ -294,7 +294,7 @@ void doSpinUp() {
   xAlignServo.write(xAngleToWall());
   //distanceSensorServo.write(sensorStowAngle);
 
-  leftFlywheel.set(-1);
+  leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
   indexerMotor.set(0);
 
@@ -307,7 +307,7 @@ void doFire() {
   xAlignServo.write(xAngleToWall());
   //distanceSensorServo.write(sensorStowAngle);
 
-  leftFlywheel.set(-1);
+  leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
   indexerMotor.set(1);
 
@@ -341,7 +341,7 @@ void doScoreAmp() {
 
 // Runs both flywheels. -1 is intake, 1 is outtake/shoot.
 void runFlywheels(float power) {
-  leftFlywheel.set(-power);
+  leftFlywheel.set(power);
   rightFlywheel.set(-power);
 }
 
