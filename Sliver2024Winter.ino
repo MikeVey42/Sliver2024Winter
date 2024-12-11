@@ -34,10 +34,13 @@ NoU_Servo yAlignServo(3);
     float yMeasureAngle = 160;
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
-// NoU_Servo distanceSensorServo(3);
-//     float sensorStowAngle = 90;
-//     float sensorMeasureAngle = 90;
-//     float sensorAutoAngle = 90;
+NoU_Servo distanceSensorServo(3);
+    float sensorStowAngle = 90;
+    float sensorMeasureAngle = 90;
+    float sensorAutoAngle = 90;
+
+  int trigPin = 8;
+  int echoPin = 9;
 
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
@@ -57,7 +60,8 @@ enum State{
   stow, 
   intaking, 
   intermediate,
-  aiming, 
+  aiming,
+  measuring,
   spinningUp,
   firing,
   prepareAmp,
@@ -72,6 +76,10 @@ unsigned long lastStateChange = 0;
 
 float targetYAngle = 180;
 
+unsigned long startEcho = 0;
+bool echoing = false;
+bool doneMeasuring = false;
+
 
 void setup() {
   NoU3.begin();
@@ -80,6 +88,11 @@ void setup() {
 
   leftMotor.setInverted(true);
   rightMotor.setInverted(false);
+
+  // Distance sensor 
+  pinMode(trigPin, OUTPUT); // This is the trigger pin, it tells the sensor to fire
+  pinMode(echoPin, INPUT); // This is the echo pin, it reads the distance
+
 }
 
 
@@ -146,6 +159,10 @@ void updateState() {
     else if (stateTime() > 1000) {
       changeStateTo(firing);
     }
+  }else if (state == measuring) {
+    if (stateTime() > 50) {
+      changeStateTo(spinningUp);
+    }
   }else if (state == scoreAmp) {
     if (stateTime() > 1000) {
       targetState = stow;
@@ -160,12 +177,16 @@ void updateState() {
       changeStateTo(scoreAmp);
     }
   }else {
+    if (state == aiming) {
+      if (PestoLink.keyHeld(fireKey)) {
+        doneMeasuring = false;
+        changeStateTo(measuring);
+      }
+    }
     if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
     }else if (PestoLink.keyHeld(aimKey)) {
       changeStateTo(aiming);
-    }else if (PestoLink.keyHeld(fireKey)) {
-      changeStateTo(spinningUp);
     }else if (PestoLink.keyHeld(ampKey)) {
       changeStateTo(prepareAmp);
     }else{
@@ -191,6 +212,10 @@ void performState() {
 
     case aiming:
       doAiming();
+      break;
+
+    case measuring:
+      doMeasuring();
       break;
 
     case spinningUp:
@@ -230,10 +255,6 @@ float getYaw() {
 float xAngleToWall() {
   float currentYaw = getYaw();
   float targetAngle = (xStartAngle - currentYaw);
-  // Print gyro values
-  char result[8];
-  dtostrf(currentYaw, 6, 2, result);
-  PestoLink.print(result);
   if (targetAngle > -10 && targetAngle < 190) {
       return targetAngle;
   }else {
@@ -244,7 +265,7 @@ float xAngleToWall() {
 void doStow() {
   yAlignServo.write(yStowAngle);
   xAlignServo.write(180);
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle);
 
   runFlywheels(0);
   indexerMotor.set(0);
@@ -256,7 +277,7 @@ void doStow() {
 void doIntaking() {
   yAlignServo.write(120);
   xAlignServo.write(180);
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle + 10);
 
   runFlywheels(-1);
   indexerMotor.set(-1);
@@ -268,7 +289,7 @@ void doIntaking() {
 void doIntermediate() {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(180);
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle);
 
   runFlywheels(0);
   indexerMotor.set(0);
@@ -280,7 +301,7 @@ void doIntermediate() {
 void doAiming() {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(xAngleToWall());
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle - 10);
 
   runFlywheels(0);
   indexerMotor.set(0);
@@ -289,10 +310,40 @@ void doAiming() {
   intakeMotor.set(0);
 }
 
+void doMeasuring() {
+  yAlignServo.write(yMeasureAngle);
+  xAlignServo.write(xAngleToWall());
+  distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+
+  if (stateTime() < 3) {
+    digitalWrite(trigPin, LOW);
+  }else if (stateTime() < 13) {
+    digitalWrite(trigPin, HIGH);
+  }else {
+    digitalWrite(trigPin, LOW);
+    boolean signal = digitalRead(echoPin);
+    if (!echoing && signal) {
+      echoing = true;
+      startEcho = millis();
+    }
+    if (echoing && !signal) {
+      float distance = (millis() - startEcho) * .0343;
+      targetYAngle = getTargetShooterAngle(distance);
+      doneMeasuring = true;
+    }
+  }
+}
+
 void doSpinUp() {
   yAlignServo.write(targetYAngle);
   xAlignServo.write(xAngleToWall());
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
@@ -305,7 +356,7 @@ void doSpinUp() {
 void doFire() {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(xAngleToWall());
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
@@ -318,7 +369,7 @@ void doFire() {
 void doPrepareAmp() {
   yAlignServo.write(175);
   xAlignServo.write(xStartAngle);
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle);
 
   runFlywheels(0.5);
   indexerMotor.set(0);
@@ -330,7 +381,7 @@ void doPrepareAmp() {
 void doScoreAmp() {
   yAlignServo.write(175);
   xAlignServo.write(xStartAngle);
-  //distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorStowAngle);
 
   runFlywheels(0.5);
   indexerMotor.set(1);
@@ -350,16 +401,11 @@ void revIntake() {
   intakeMotor.set(-1);
 }
 
-// Uses a distance sensor to get the distance from the wall
-float getDistance() {
-  // unimplemented
-  return 0;
-}
-
 // Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
-float getTargetShooterAngle() {
-  // unimplemented
-  float distance = getDistance();
+float getTargetShooterAngle(float distance) {
+  char result[8];
+  dtostrf(distance, 6, 2, result);
+  PestoLink.print(result);
   return 190;
 }
 
