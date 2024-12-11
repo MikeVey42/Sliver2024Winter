@@ -53,46 +53,62 @@ unsigned long lastTime = 0;
 
 float gyro_z_offset_degrees = -0.14;
 
-boolean firing = false;
-unsigned long fireTime = 0;
+enum State{
+  stow, 
+  intaking, 
+  intermediate,
+  aiming, 
+  spinningUp,
+  firing,
+  prepareAmp,
+  scoreAmp,
+  autonomous
+};
 
-boolean amp = false;
-unsigned long ampTime = 0;
+State state = stow;
+State targetState = stow;
+
+unsigned long lastStateChange = 0;
+
+float targetYAngle = 180;
+
 
 void setup() {
-    //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
-    NoU3.begin();
-    PestoLink.begin("Sliver24v2");
-    Serial.begin(115200);
+  NoU3.begin();
+  PestoLink.begin("Sliver24v2");
+  Serial.begin(115200);
 
-    leftMotor.setInverted(true);
-    rightMotor.setInverted(false);
+  leftMotor.setInverted(true);
+  rightMotor.setInverted(false);
 }
+
 
 void loop() {
 
-    // This measures your batteries voltage and sends it to PestoLink
-    // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
-    float batteryVoltage = NoU3.getBatteryVoltage();
-    //PestoLink.printBatteryVoltage(batteryVoltage);
+  // This measures your batteries voltage and sends it to PestoLink
+  // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
+  float batteryVoltage = NoU3.getBatteryVoltage();
+  //PestoLink.printBatteryVoltage(batteryVoltage);
 
-    // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
-    if (PestoLink.update()) {
-        
-        drive();
+  // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
+  if (PestoLink.update()) {
+    
+    drive();
 
-        NoU3.setServiceLight(LIGHT_ENABLED);
-    } else {
-        NoU3.setServiceLight(LIGHT_DISABLED);
-    }
+    NoU3.setServiceLight(LIGHT_ENABLED);
+  } else {
+    NoU3.setServiceLight(LIGHT_DISABLED);
+  }
 
-    updateGyro();
+  updateGyro();
 
-    turretControl();
-    // No need to mess with this code
-    PestoLink.update();
-    NoU3.updateServiceLight();
-    NoU3.updateIMUs();
+  updateState();
+  performState();
+
+  // No need to mess with this code
+  PestoLink.update();
+  NoU3.updateServiceLight();
+  NoU3.updateIMUs();
 }
 
 void drive() {
@@ -102,33 +118,103 @@ void drive() {
   drivetrain.arcadeDrive(throttle, rotation);
 }
 
-void turretControl() {
-  if (PestoLink.keyHeld(fireKey)) {
-    prepareToShoot();
-    fire();
+void changeStateTo(State s) {
+  state = s;
+  lastStateChange = millis();
+}
+
+float stateTime() {
+  return millis() - lastStateChange;
+}
+
+void updateState() {
+  // If in intermediate, go to next
+  if (state == intermediate) {
+    if (stateTime() > 500) {
+      changeStateTo(targetState);
+    }
+  }else if (state == firing) {
+    if (stateTime() > 1000) {
+      targetState = stow;
+      changeStateTo(intermediate);
+    }
+  }else if (state == spinningUp) {
+    if (!PestoLink.keyHeld(fireKey)) {
+      targetState = stow;
+      changeStateTo(intermediate);
+    }
+    else if (stateTime() > 1000) {
+      changeStateTo(firing);
+    }
+  }else if (state == scoreAmp) {
+    if (stateTime() > 1000) {
+      targetState = stow;
+      changeStateTo(intermediate);
+    }
+  }else if (state == prepareAmp) {
+    if (!PestoLink.keyHeld(ampKey)) {
+      targetState = stow;
+      changeStateTo(intermediate);
+    }
+    else if (stateTime() > 1000) {
+      changeStateTo(scoreAmp);
+    }
   }else {
-    firing = false;
-    indexerMotor.set(0);
-    if (PestoLink.keyHeld(aimKey)) {
-      prepareToMeasure();
-      leftFlywheel.set(0);
-      rightFlywheel.set(0);
+    if (PestoLink.keyHeld(intakeKey)) {
+      changeStateTo(intaking);
+    }else if (PestoLink.keyHeld(aimKey)) {
+      changeStateTo(aiming);
+    }else if (PestoLink.keyHeld(fireKey)) {
+      changeStateTo(spinningUp);
+    }else if (PestoLink.keyHeld(ampKey)) {
+      changeStateTo(prepareAmp);
+    }else{
+      changeStateTo(stow);
     }
-    else if (PestoLink.keyHeld(intakeKey)) {
-      intake();
-    } else if (PestoLink.keyHeld(revIntakeKey)) {
-      revIntake();
-    }
-    else {
-      if (PestoLink.keyHeld(ampKey)) {
-        doAmp();
-      }else {
-        stow();
-        amp = false;
-        leftFlywheel.set(0);
-        rightFlywheel.set(0);
-      }
-    }
+  }
+}
+
+void performState() {
+  switch (state)
+  {
+    case stow:
+      doStow();
+      break;
+    
+    case intaking:
+      doIntaking();
+      break;
+
+    case intermediate:
+      doIntermediate();
+      break;
+
+    case aiming:
+      doAiming();
+      break;
+
+    case spinningUp:
+      doSpinUp();
+      break;
+
+    case firing:
+      doFire();
+      break;
+
+    case prepareAmp:
+      doPrepareAmp();
+      break;
+
+    case scoreAmp:
+      doScoreAmp();
+      break;
+    
+    case autonomous:
+      // Implement auto logic here 
+      break;
+
+    default:
+      break;
   }
 }
 
@@ -141,52 +227,122 @@ float getYaw() {
 
 // Moves the shooter to aim directly towards the alliance wall.
 // If the robot is in front of the speaker, this will aim it towards the speaker
-float xAlignWithSpeaker() {
-    float currentYaw = getYaw();
-    float targetAngle = (xStartAngle - currentYaw);
-    // Print gyro values
-    char result[8];
-    dtostrf(currentYaw, 6, 2, result);
-    PestoLink.print(result);
-    if (targetAngle > -10 && targetAngle < 190) {
-        xAlignServo.write(targetAngle);
-        return true;
-    }else {
-        xAlignServo.write(0);
-        return false;
-    }
+float xAngleToWall() {
+  float currentYaw = getYaw();
+  float targetAngle = (xStartAngle - currentYaw);
+  // Print gyro values
+  char result[8];
+  dtostrf(currentYaw, 6, 2, result);
+  PestoLink.print(result);
+  if (targetAngle > -10 && targetAngle < 190) {
+      return targetAngle;
+  }else {
+      return 0;
+  }
 }
 
-// Uses a distance sensor to get the distance from the wall
-float getDistance() {
-    // unimplemented
-    return 0;
-}
-
-// Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
-float getTargetShooterAngle() {
-    // unimplemented
-    float distance = getDistance();
-    return 190;
-}
-
-void stow() {
-    yAlignServo.write(yStowAngle);
-    xAlignServo.write(180);
-    //distanceSensorServo.write(sensorStowAngle);
-    intakeServo.write(0);
-    intakeMotor.set(0);
-    indexerMotor.set(0);
-}
-
-void intake() {
+void doStow() {
+  yAlignServo.write(yStowAngle);
   xAlignServo.write(180);
+  //distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+void doIntaking() {
   yAlignServo.write(120);
+  xAlignServo.write(180);
+  //distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(-1);
+  indexerMotor.set(-1);
+
   intakeServo.write(120);
   intakeMotor.set(1);
-  leftFlywheel.set(1);
-  rightFlywheel.set(1);
-  indexerMotor.set(-1);
+}
+
+void doIntermediate() {
+  yAlignServo.write(yMeasureAngle);
+  xAlignServo.write(180);
+  //distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+void doAiming() {
+  yAlignServo.write(yMeasureAngle);
+  xAlignServo.write(xAngleToWall());
+  //distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+void doSpinUp() {
+  yAlignServo.write(targetYAngle);
+  xAlignServo.write(xAngleToWall());
+  //distanceSensorServo.write(sensorStowAngle);
+
+  leftFlywheel.set(-1);
+  rightFlywheel.set(-0.5);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+void doFire() {
+  yAlignServo.write(yMeasureAngle);
+  xAlignServo.write(xAngleToWall());
+  //distanceSensorServo.write(sensorStowAngle);
+
+  leftFlywheel.set(-1);
+  rightFlywheel.set(-0.5);
+  indexerMotor.set(1);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+void doPrepareAmp() {
+  yAlignServo.write(175);
+  xAlignServo.write(xStartAngle);
+  //distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0.5);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+void doScoreAmp() {
+  yAlignServo.write(175);
+  xAlignServo.write(xStartAngle);
+  //distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0.5);
+  indexerMotor.set(1);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+}
+
+// Runs both flywheels. -1 is intake, 1 is outtake/shoot.
+void runFlywheels(float power) {
+  leftFlywheel.set(-power);
+  rightFlywheel.set(-power);
 }
 
 void revIntake() {
@@ -194,77 +350,37 @@ void revIntake() {
   intakeMotor.set(-1);
 }
 
-void prepareToMeasure() {
-  xAlignWithSpeaker();
-  yAlignServo.write(yMeasureAngle);
-  // distanceSensorServo.write(sensorMeasureAngle);
-  indexerMotor.set(0);
+// Uses a distance sensor to get the distance from the wall
+float getDistance() {
+  // unimplemented
+  return 0;
 }
 
-void prepareToShoot() {
-    xAlignWithSpeaker();
-    float targetAngle = getTargetShooterAngle();
-    yAlignServo.write(targetAngle);
-    leftFlywheel.set(-1);
-    rightFlywheel.set(-0.5);
-}
-
-void fire() {
-  if (firing) {
-    if (millis() - fireTime > 1500) {
-      indexerMotor.set(1);
-    }
-  }else {
-    firing = true;
-    fireTime = millis();
-    indexerMotor.set(0);
-  }
-}
-
-void doAmp() {
-  xAlignServo.write(xStartAngle);
-  yAlignServo.write(175);
-  leftFlywheel.set(-0.5);
-  rightFlywheel.set(-0.5);
-  if (amp) {
-    if (millis() - ampTime > 1500) {
-      indexerMotor.set(1);
-    }
-  }else {
-    amp = true;
-    ampTime = millis();
-    indexerMotor.set(0);
-  }
+// Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
+float getTargetShooterAngle() {
+  // unimplemented
+  float distance = getDistance();
+  return 190;
 }
 
 void updateGyro() {
-    if (NoU3.updateIMUs()) {
+  if (NoU3.updateIMUs()) {
 
-        unsigned long currentTime = millis();
-        float dt = (currentTime - lastTime) / 1000.0;
-        lastTime = currentTime;
+    unsigned long currentTime = millis();
+    float dt = (currentTime - lastTime) / 1000.0;
+    lastTime = currentTime;
 
-        // Gyroscope yaw update
-        yaw_gyro_deg += (NoU3.gyroscope_z - gyro_z_offset_degrees) * dt;
+    // Gyroscope yaw update
+    yaw_gyro_deg += (NoU3.gyroscope_z - gyro_z_offset_degrees) * dt;
 
-        // Magnetometer yaw
-        yaw_mag_deg = -1 * degrees(atan2(NoU3.magnetometer_y, NoU3.magnetometer_x));
+    // Magnetometer yaw
+    //yaw_mag_deg = -1 * degrees(atan2(NoU3.magnetometer_y, NoU3.magnetometer_x));
 
-        // Wrap Magnetometer yaw
-        //wrapped_yaw_mag_deg = wrapYaw(yaw_mag_deg);
+    // Wrap Magnetometer yaw
+    //wrapped_yaw_mag_deg = wrapYaw(yaw_mag_deg);
 
-        // Apply complementary filter with drift compensation
-        yaw = wrapYaw(yaw_gyro_deg);
-
-        // // Print results
-        // Serial.print("yaw_gyro_deg: ");
-        // Serial.print(yaw_gyro_deg);
-        // Serial.print(" wrapped_yaw_mag_deg: ");
-        // Serial.print(wrapped_yaw_mag_deg);
-        // Serial.print(" Yaw: ");
-        // Serial.print(yaw);
-        
-        // Serial.println(" ");
+    // Wrap yaw
+    yaw = wrapYaw(yaw_gyro_deg);
 
   }
 }
