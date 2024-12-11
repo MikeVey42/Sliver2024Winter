@@ -96,10 +96,10 @@ void setup() {
 }
 
 void loop() {
-    throttle = 0;
-    rotation = 0;
+  throttle = 0;
+  rotation = 0;
 
-    autoTimer = millis() - autoStartTime;
+  autoTimer = millis() - autoStartTime;
 
   // This measures your batteries voltage and sends it to PestoLink
   // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
