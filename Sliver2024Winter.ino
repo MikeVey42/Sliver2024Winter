@@ -100,6 +100,10 @@ float targetYAngle = 180;
 unsigned long startEcho = 0;
 bool echoing = false;
 bool doneMeasuring = false;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3d57298 (printing distance sensor values)
 
 void setup() {
   NoU3.begin();
@@ -214,7 +218,11 @@ void updateState() {
     }
   }else {
     if (state == aiming) {
+<<<<<<< HEAD
       if (PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
+=======
+      if (PestoLink.keyHeld(fireKey)) {
+>>>>>>> 3d57298 (printing distance sensor values)
         doneMeasuring = false;
         changeStateTo(measuring);
       }
@@ -223,7 +231,11 @@ void updateState() {
       changeStateTo(intaking);
     }else if (PestoLink.keyHeld(aimKey)) {
       changeStateTo(aiming);
+<<<<<<< HEAD
     }else if (PestoLink.keyHeld(ampKey) && !scoreInputLastLoop) {
+=======
+    }else if (PestoLink.keyHeld(ampKey)) {
+>>>>>>> 3d57298 (printing distance sensor values)
       changeStateTo(prepareAmp);
     }else{
       changeStateTo(stow);
@@ -523,6 +535,7 @@ void doAiming(bool manual, int x, int y) {
 
 void doMeasuring() {
   yAlignServo.write(yMeasureAngle);
+<<<<<<< HEAD
   xAlignServo.write(xAngleToWall());
   distanceSensorServo.write(sensorStowAngle);
 
@@ -587,6 +600,40 @@ void doSpinUp(bool manual) {
     xAlignServo.write(xAngleToWall());
   }
   distanceSensorServo.write(sensorStowAngle);
+=======
+  xAlignServo.write(xAngleToWall());
+  distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(0);
+  indexerMotor.set(0);
+
+  intakeServo.write(0);
+  intakeMotor.set(0);
+
+  if (stateTime() < 3) {
+    digitalWrite(trigPin, LOW);
+  }else if (stateTime() < 13) {
+    digitalWrite(trigPin, HIGH);
+  }else {
+    digitalWrite(trigPin, LOW);
+    boolean signal = digitalRead(echoPin);
+    if (!echoing && signal) {
+      echoing = true;
+      startEcho = millis();
+    }
+    if (echoing && !signal) {
+      float distance = (millis() - startEcho) * .0343;
+      targetYAngle = getTargetShooterAngle(distance);
+      doneMeasuring = true;
+    }
+  }
+}
+
+void doSpinUp() {
+  yAlignServo.write(targetYAngle);
+  xAlignServo.write(xAngleToWall());
+  distanceSensorServo.write(sensorStowAngle);
+>>>>>>> 3d57298 (printing distance sensor values)
 
   leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
@@ -596,11 +643,17 @@ void doSpinUp(bool manual) {
   intakeMotor.set(0);
 }
 
+<<<<<<< HEAD
 void doFire(bool manual) {
   if(!manual) {
     yAlignServo.write(yMeasureAngle);
     xAlignServo.write(xAngleToWall());
   }
+=======
+void doFire() {
+  yAlignServo.write(yMeasureAngle);
+  xAlignServo.write(xAngleToWall());
+>>>>>>> 3d57298 (printing distance sensor values)
   distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
