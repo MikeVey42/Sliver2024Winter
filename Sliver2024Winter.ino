@@ -15,7 +15,7 @@ NoU_Motor leftMotor(1);
 NoU_Motor rightMotor(8);
 
 // Flywheels: for launching notes
-NoU_Motor leftFlywheel(2);
+NoU_Motor leftFlywheel(5);
 NoU_Motor rightFlywheel(7);
 
 NoU_Motor indexerMotor(6);
@@ -74,7 +74,7 @@ void loop() {
     // This measures your batteries voltage and sends it to PestoLink
     // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
     float batteryVoltage = NoU3.getBatteryVoltage();
-    //PestoLink.printBatteryVoltage(batteryVoltage);
+    PestoLink.printBatteryVoltage(batteryVoltage);
 
     // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
     if (PestoLink.update()) {
@@ -147,7 +147,7 @@ float xAlignWithSpeaker() {
     // Print gyro values
     char result[8];
     dtostrf(currentYaw, 6, 2, result);
-    PestoLink.print(result);
+    //PestoLink.print(result);
     if (targetAngle > -10 && targetAngle < 190) {
         xAlignServo.write(targetAngle);
         return true;
@@ -184,7 +184,7 @@ void intake() {
   yAlignServo.write(120);
   intakeServo.write(120);
   intakeMotor.set(1);
-  leftFlywheel.set(1);
+  leftFlywheel.set(-1);
   rightFlywheel.set(1);
   indexerMotor.set(-1);
 }
@@ -205,7 +205,7 @@ void prepareToShoot() {
     xAlignWithSpeaker();
     float targetAngle = getTargetShooterAngle();
     yAlignServo.write(targetAngle);
-    leftFlywheel.set(-1);
+    leftFlywheel.set(1);
     rightFlywheel.set(-0.5);
 }
 
@@ -224,7 +224,7 @@ void fire() {
 void doAmp() {
   xAlignServo.write(xStartAngle);
   yAlignServo.write(175);
-  leftFlywheel.set(-0.5);
+  leftFlywheel.set(0.5);
   rightFlywheel.set(-0.5);
   if (amp) {
     if (millis() - ampTime > 1500) {
