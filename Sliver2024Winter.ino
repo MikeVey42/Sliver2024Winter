@@ -15,7 +15,8 @@ Key centerCloseAuto = Key::Digit2;
 Key centerFarAuto = Key::Digit3;
 Key sourceCloseAuto = Key::Digit4;
 Key sourceFarAuto = Key::Digit5;
-Key armAuto = Key::Digit9;
+Key armRedAuto = Key::Digit8;
+Key armBlueAuto = Key::Digit9;
 Key terminateAuto = Key::Digit0;
 
 // Drivetrain Motors
@@ -38,6 +39,7 @@ int autoSequence = 0;
 int autoStartTime = 0;
 int autoTimer = 0;
 bool autoStarted = false;
+bool isRed = true;
 
 // Aiming: these are for aiming the shooter left/right and up/down
 NoU_Servo xAlignServo(1);
@@ -221,7 +223,10 @@ void updateState() {
     } else if(PestoLink.keyHeld(sourceFarAuto)) {
       autoSequence = 5;
       changeStateTo(autonomous);
-    } else if(PestoLink.keyHeld(armAuto)) {
+    } else if(PestoLink.keyHeld(armRedAuto)) {
+      autoSequence = 8;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(armBlueAuto)) {
       autoSequence = 9;
       changeStateTo(autonomous);
     } else if(PestoLink.keyHeld(terminateAuto)) {
@@ -277,13 +282,15 @@ void performState() {
           //centerAltAuto();
           break;
         case 4:
-          //sourceAuto();
+          sourceAuto();
           break;
         case 5:
           //sourceAltAuto();
           break;
+        case 8:
+          doArmAuto(true);
         case 9:
-          doArmAuto();
+          doArmAuto(false);
           break;
         default:
           autoStarted = false;
@@ -296,7 +303,8 @@ void performState() {
   }
 }
 
-void doArmAuto() {
+void doArmAuto(bool redAlliance) {
+  isRed = redAlliance;
   doAiming(true, 0, 190); // Prep for rear subwoofer shot
 }
 
@@ -342,15 +350,17 @@ void centerAuto() {
     doStow();
   } else if(autoTimer < 7500) {
     doIntaking();
+  } else if(autoTimer < 7550) {
+    turnInit();
   } else if(autoTimer < 8500) {
     throttle = -1;
-    turnBy(true, 45);
-    turnStarted = false;
+    turnBy(isRed, 45);
     doIntaking();
+  } else if(autoTimer < 8550) {
+    turnInit();
   } else if(autoTimer < 9500) {
     throttle = 1;
-    turnBy(false, 45);
-    turnStarted = false;
+    turnBy(!isRed, 45);
     doIntaking();
   } else if(autoTimer < 10000) {
     doAiming(true, 0, 190); // Prep for rear subwoofer shot
@@ -363,8 +373,54 @@ void centerAuto() {
   }
 }
 
-void turnBy(boolean clockwise, int degrees) {
-  if(!turnStarted) { startDegrees = getYaw(); }
+void sourceAuto() {
+  if(autoStarted == false) {
+    autoStarted = true;
+    autoStartTime = millis();
+  } else if(autoTimer < 1000) {
+    doSpinUp(true);
+  } else if(autoTimer < 2000) {
+    doFire(true);
+  } else if(autoTimer < 2200) {
+    doStow();
+  } else if(autoTimer < 2500) {
+    doIntaking();
+  } else if(autoTimer < 2550) {
+    turnInit();
+  } else if(autoTimer < 3500) {
+    throttle = -1;
+    turnBy(isRed, 45);
+    doIntaking();
+  } else if(autoTimer < 3550) {
+    turnInit();
+  } else if(autoTimer < 4500) {
+    throttle = 1;
+    turnBy(!isRed, 45);
+    doIntaking();
+  } else if(autoTimer < 5000) {
+    doStow();
+  } else if(autoTimer < 6000) {
+    doAiming(true, 0, 190); // Prep for rear subwoofer shot
+    doSpinUp(true);
+  } else if(autoTimer < 7000) {
+    doFire(true);
+  } else if(autoTimer < 7200) {
+    doStow();
+  } else {
+    autoSequence = 0;
+    autoStarted = false;
+  }
+}
+
+void turnInit() {
+  turnStarted = false;
+}
+
+void turnBy(bool clockwise, int degrees) {
+  if(!turnStarted) { 
+    startDegrees = getYaw(); 
+    turnStarted = true;
+  }
   if(abs(startDegrees - getYaw) < degrees - 5) {
     if(clockwise) { rotation = 1; }
     else { rotation = -1; }
@@ -430,7 +486,7 @@ void doIntermediate() {
   intakeMotor.set(0);
 }
 
-void doAiming(boolean manual, int x, int y) {
+void doAiming(bool manual, int x, int y) {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(xAngleToWall());
   //distanceSensorServo.write(sensorStowAngle);
@@ -442,7 +498,7 @@ void doAiming(boolean manual, int x, int y) {
   intakeMotor.set(0);
 }
 
-void doSpinUp(boolean manual) {
+void doSpinUp(bool manual) {
   if(!manual) {
     yAlignServo.write(targetYAngle);
     xAlignServo.write(xAngleToWall());
@@ -457,7 +513,7 @@ void doSpinUp(boolean manual) {
   intakeMotor.set(0);
 }
 
-void doFire(boolean manual) {
+void doFire(bool manual) {
   if(!manual) {
     yAlignServo.write(yMeasureAngle);
     xAlignServo.write(xAngleToWall());
