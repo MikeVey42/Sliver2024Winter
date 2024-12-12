@@ -58,7 +58,8 @@ float gyro_z_offset_degrees = -0.14;
 
 enum State{
   stow, 
-  intaking, 
+  intaking,
+  outtaking,
   intermediate,
   aiming,
   measuring,
@@ -184,6 +185,8 @@ void updateState() {
     }
     if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
+    }else if (PestoLink.keyHeld(revIntakeKey)) {
+      changeStateTo(outtaking);
     }else if (PestoLink.keyHeld(aimKey)) {
       changeStateTo(aiming);
     }else if (PestoLink.keyHeld(ampKey) && !scoreInputLastLoop) {
@@ -205,6 +208,10 @@ void performState() {
     
     case intaking:
       doIntaking();
+      break;
+
+    case outtaking:
+      doOuttaking();
       break;
 
     case intermediate:
@@ -285,6 +292,18 @@ void doIntaking() {
 
   intakeServo.write(120);
   intakeMotor.set(1);
+}
+
+void doOuttaking() {
+  yAlignServo.write(yStowAngle);
+  xAlignServo.write(180);
+  distanceSensorServo.write(sensorStowAngle);
+
+  runFlywheels(1);
+  indexerMotor.set(1);
+
+  intakeServo.write(60);
+  intakeMotor.set(-1);
 }
 
 void doIntermediate() {
@@ -396,11 +415,6 @@ void doScoreAmp() {
 void runFlywheels(float power) {
   leftFlywheel.set(power);
   rightFlywheel.set(-power);
-}
-
-void revIntake() {
-  intakeServo.write(60);
-  intakeMotor.set(-1);
 }
 
 // Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
