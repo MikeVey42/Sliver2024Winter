@@ -1,6 +1,7 @@
 #include <PestoLink-Receive.h>
 #include <Alfredo_NoU3.h>
 #include <Keys.h>
+#include <math.h>
 
 // KEYBINDS
 Key startAutoKey = Key::Digit0;
@@ -152,8 +153,21 @@ void loop() {
 }
 
 void drive() {
-  throttle = PestoLink.getAxis(1);
-  rotation = 0.9 * -PestoLink.getAxis(0);
+  if (PestoLink.keyHeld(Key::W)) {
+    throttle = 1;
+  }else if (PestoLink.keyHeld(Key::S)) {
+    throttle = -1;
+  }else{
+    throttle = 0;
+  }
+
+  if (PestoLink.keyHeld(Key::A)) {
+    rotation = 0.9;
+  }else if (PestoLink.keyHeld(Key::D)) {
+    rotation = -0.9;
+  }else{
+    rotation = 0;
+  }
 }
 
 void autoDrive(float t, float r) {
@@ -452,7 +466,7 @@ void turnBy(bool clockwise, int degrees) {
     startDegrees = getYaw(); 
     turnStarted = true;
   }
-  if(abs(startDegrees - getYaw) < degrees - 5) {
+  if(abs(startDegrees - getYaw()) < degrees - 5) {
     if(clockwise) { rotation = 1; }
     else { rotation = -1; }
   }
@@ -467,14 +481,24 @@ float getYaw() {
 
 // Moves the shooter to aim directly towards the alliance wall.
 // If the robot is in front of the speaker, this will aim it towards the speaker
-float xAngleToWall() {
+float getXAngle() {
   float currentYaw = getYaw();
-  float targetAngle = (xStartAngle - currentYaw);
+  float joystickInput = getJoystickAngle();
+  float targetAngle = (xStartAngle - currentYaw) + joystickInput;
   if (targetAngle > -10 && targetAngle < 190) {
       return targetAngle;
   }else {
       return 0;
   }
+}
+
+float getJoystickAngle() {
+  float x = PestoLink.getAxis(2);
+  print(x);
+  float y = PestoLink.getAxis(3);
+
+  float rotation = atan2(x, -y);
+  return rotation;
 }
 
 void doStow() {
@@ -527,7 +551,7 @@ void doIntermediate() {
 
 void doAiming(bool manual = false, int x = 0, int y = 0) {
   yAlignServo.write(yMeasureAngle);
-  xAlignServo.write(xAngleToWall());
+  xAlignServo.write(getXAngle());
   distanceSensorServo.write(sensorStowAngle - 10);
 
   runFlywheels(0);
@@ -539,7 +563,7 @@ void doAiming(bool manual = false, int x = 0, int y = 0) {
 
 void doMeasuring() {
   yAlignServo.write(yMeasureAngle);
-  xAlignServo.write(xAngleToWall());
+  xAlignServo.write(getXAngle());
   distanceSensorServo.write(sensorStowAngle);
 
   runFlywheels(0);
@@ -571,7 +595,7 @@ void doMeasuring() {
 
 void doSpinUp() {
   yAlignServo.write(targetYAngle);
-  xAlignServo.write(xAngleToWall());
+  xAlignServo.write(getXAngle());
   distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
@@ -585,7 +609,7 @@ void doSpinUp() {
 void doFire(bool manual = false) {
   if(!manual) {
     yAlignServo.write(yMeasureAngle);
-    xAlignServo.write(xAngleToWall());
+    xAlignServo.write(getXAngle());
   }
   distanceSensorServo.write(sensorStowAngle);
 
