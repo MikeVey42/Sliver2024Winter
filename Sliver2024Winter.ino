@@ -15,6 +15,7 @@ Key centerCloseAuto = Key::Digit2;
 Key centerFarAuto = Key::Digit3;
 Key sourceCloseAuto = Key::Digit4;
 Key sourceFarAuto = Key::Digit5;
+Key armAuto = Key::Digit9;
 Key terminateAuto = Key::Digit0;
 
 // Drivetrain Motors
@@ -55,6 +56,10 @@ NoU_Servo yAlignServo(3);
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
 float throttle = 0;
 float rotation = 0;
+
+// Turning variables
+boolean turnStarted;
+int startDegrees = 0;
 
 // GYRO
 float yaw_gyro_deg = 0;
@@ -163,7 +168,7 @@ void updateState() {
       changeStateTo(intermediate);
     }
   }else if (state == spinningUp) {
-    if (!PestoLink.keyHeld(fireKey)) {
+    if (!PestoLink.keyHeld(fireKey) && !autoStarted) {
       targetState = stow;
       changeStateTo(intermediate);
     }
@@ -183,6 +188,11 @@ void updateState() {
     else if (stateTime() > 1000) {
       changeStateTo(scoreAmp);
     }
+  }else if (state == autonomous) {
+    if(autoSequence == 0) {
+      targetState = stow;
+      changeStateTo(intermediate);
+    }
   }else {
     if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
@@ -194,6 +204,28 @@ void updateState() {
       changeStateTo(prepareAmp);
     }else{
       changeStateTo(stow);
+    }
+
+    if(PestoLink.keyHeld(moveOnlyAuto)) {
+      autoSequence = 1;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(centerCloseAuto)) {
+      autoSequence = 2;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(centerFarAuto)) {
+      autoSequence = 3;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(sourceCloseAuto)) {
+      autoSequence = 4;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(sourceFarAuto)) {
+      autoSequence = 5;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(armAuto)) {
+      autoSequence = 9;
+      changeStateTo(autonomous);
+    } else if(PestoLink.keyHeld(terminateAuto)) {
+      autoSequence = 0;
     }
   }
 }
@@ -234,7 +266,29 @@ void performState() {
       break;
     
     case autonomous:
-      // Implement auto logic here 
+      switch(autoSequence) {
+        case 1:
+          moveAuto();
+          break;
+        case 2:
+          centerAuto();
+          break;
+        case 3:
+          //centerAltAuto();
+          break;
+        case 4:
+          //sourceAuto();
+          break;
+        case 5:
+          //sourceAltAuto();
+          break;
+        case 9:
+          doArmAuto();
+          break;
+        default:
+          autoStarted = false;
+          return;
+      }
       break;
 
     default:
@@ -242,41 +296,8 @@ void performState() {
   }
 }
 
-void autoControl() {
-  if(PestoLink.keyHeld(moveOnlyAuto)) {
-    autoSequence = 1;
-  } else if(PestoLink.keyHeld(centerCloseAuto)) {
-    autoSequence = 2;
-  } else if(PestoLink.keyHeld(centerFarAuto)) {
-    autoSequence = 3;
-  } else if(PestoLink.keyHeld(sourceCloseAuto)) {
-    autoSequence = 4;
-  } else if(PestoLink.keyHeld(sourceFarAuto)) {
-    autoSequence = 5;
-  } else if(PestoLink.keyHeld(terminateAuto)) {
-    autoSequence = 0;
-  }
-
-  switch(autoSequence) {
-    case 1:
-      moveAuto();
-      break;
-    case 2:
-      centerAuto();
-      break;
-    case 3:
-      //centerAltAuto();
-      break;
-    case 4:
-      //sourceAuto();
-      break;
-    case 5:
-      //sourceAltAuto();
-      break;
-    default:
-      autoStarted = false;
-      return;
-  }
+void doArmAuto() {
+  doAiming(true, 0, 190); // Prep for rear subwoofer shot
 }
 
 void moveAuto() {
@@ -296,37 +317,58 @@ void centerAuto() {
   if(autoStarted == false) {
     autoStarted = true;
     autoStartTime = millis();
+  } else if(autoTimer < 1000) {
+    doSpinUp(true);
   } else if(autoTimer < 2000) {
-    rearSubwooferShot();
+    doFire(true);
   } else if(autoTimer < 2200) {
-    stow();
+    doStow();
   } else if(autoTimer < 2500) {
-    intake();
+    doIntaking();
   } else if(autoTimer < 3500) {
     throttle = -1;
-    intake();
+    doIntaking();
   } else if(autoTimer < 4500) {
     throttle = 1;
-    intake();
+    doIntaking();
   } else if(autoTimer < 5000) {
-    stow();
+    doStow();
+  } else if(autoTimer < 6000) {
+    doAiming(true, 0, 190); // Prep for rear subwoofer shot
+    doSpinUp(true);
   } else if(autoTimer < 7000) {
-    rearSubwooferShot();
-  } else if(autoTimer < 8000) {
+    doFire(true);
+  } else if(autoTimer < 7200) {
+    doStow();
+  } else if(autoTimer < 7500) {
+    doIntaking();
+  } else if(autoTimer < 8500) {
     throttle = -1;
-    // TODO: Implement turnTo(degrees) function
-    intake();
-  } else if(autoTimer < 5500) {
+    turnBy(true, 45);
+    turnStarted = false;
+    doIntaking();
+  } else if(autoTimer < 9500) {
     throttle = 1;
-    intake();
+    turnBy(false, 45);
+    turnStarted = false;
+    doIntaking();
+  } else if(autoTimer < 10000) {
+    doAiming(true, 0, 190); // Prep for rear subwoofer shot
+    doSpinUp(true);
+  } else if(autoTimer < 11000) {
+    doFire(true);
   } else {
     autoSequence = 0;
     autoStarted = false;
   }
 }
 
-void rearSubwooferShot() {
-  // TODO: Use state machine shoot function with reverse subwoofer capability
+void turnBy(boolean clockwise, int degrees) {
+  if(!turnStarted) { startDegrees = getYaw(); }
+  if(abs(startDegrees - getYaw) < degrees - 5) {
+    if(clockwise) { rotation = 1; }
+    else { rotation = -1; }
+  }
 }
 
 // Returns the yaw in degrees, CCW positive, from -180 to 180
@@ -388,7 +430,7 @@ void doIntermediate() {
   intakeMotor.set(0);
 }
 
-void doAiming() {
+void doAiming(boolean manual, int x, int y) {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(xAngleToWall());
   //distanceSensorServo.write(sensorStowAngle);
@@ -400,9 +442,11 @@ void doAiming() {
   intakeMotor.set(0);
 }
 
-void doSpinUp() {
-  yAlignServo.write(targetYAngle);
-  xAlignServo.write(xAngleToWall());
+void doSpinUp(boolean manual) {
+  if(!manual) {
+    yAlignServo.write(targetYAngle);
+    xAlignServo.write(xAngleToWall());
+  }
   //distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
@@ -413,9 +457,11 @@ void doSpinUp() {
   intakeMotor.set(0);
 }
 
-void doFire() {
-  yAlignServo.write(yMeasureAngle);
-  xAlignServo.write(xAngleToWall());
+void doFire(boolean manual) {
+  if(!manual) {
+    yAlignServo.write(yMeasureAngle);
+    xAlignServo.write(xAngleToWall());
+  }
   //distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
