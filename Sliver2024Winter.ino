@@ -132,8 +132,10 @@ void loop() {
 
   if (PestoLink.keyHeld(decreaseAngleKey) && !lastChangeAngle) {
     targetYAngle--;
+    print(targetYAngle);
   }else if (PestoLink.keyHeld(increaseAngleKey) && !lastChangeAngle) {
     targetYAngle++;
+    print(targetYAngle);
   }
   lastChangeAngle = PestoLink.keyHeld(decreaseAngleKey) || PestoLink.keyHeld(increaseAngleKey);
 
@@ -490,7 +492,7 @@ float getXAngle() {
   float currentYaw = getYaw();
   float joystickInput = getJoystickAngle();
   float targetAngle = (xStartAngle - currentYaw) + joystickInput;
-  if (targetAngle > -10 && targetAngle < 190) {
+  if (targetAngle > -10 && targetAngle < 190) && false {
       return targetAngle;
   }else {
       return 0;
