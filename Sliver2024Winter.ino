@@ -56,13 +56,6 @@ NoU_Servo distanceSensorServo(4);
 
   int trigPin = 9;
   int echoPin = 8;
-NoU_Servo distanceSensorServo(4);
-    float sensorStowAngle = 60;
-    float sensorMeasureAngle = 80;
-    float sensorAutoAngle = 100;
-
-  int trigPin = 9;
-  int echoPin = 8;
 
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
@@ -108,10 +101,6 @@ float targetYAngle = 180;
 unsigned long startEcho = 0;
 bool echoing = false;
 bool doneMeasuring = false;
-<<<<<<< HEAD
-=======
-
->>>>>>> 3d57298 (printing distance sensor values)
 
 void setup() {
   NoU3.begin();
@@ -152,8 +141,6 @@ void loop() {
 
   updateState();
   performState();
-
-  autoControl();
     
   // Wait until the end of the loop to update components to reduce glitches
   drivetrain.curvatureDrive(throttle, rotation);
@@ -230,15 +217,15 @@ void updateState() {
         doneMeasuring = false;
         echoing = false;
         changeStateTo(measuring);
-    }else if (PestoLink.keyHeld(intakeKey)) {
+    } else if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
-    }else if (PestoLink.keyHeld(revIntakeKey)) {
+    } else if (PestoLink.keyHeld(revIntakeKey)) {
       changeStateTo(outtaking);
-    }else if (PestoLink.keyHeld(aimKey)) {
+    } else if (PestoLink.keyHeld(aimKey)) {
       changeStateTo(aiming);
-    }else if (PestoLink.keyHeld(ampKey) && !scoreInputLastLoop) {
+    } else if (PestoLink.keyHeld(ampKey) && !scoreInputLastLoop) {
       changeStateTo(prepareAmp);
-    }else{
+    } else{
       changeStateTo(stow);
     }
 
@@ -267,7 +254,7 @@ void updateState() {
       autoSequence = 0;
     }
   }
-
+  }
   scoreInputLastLoop = PestoLink.keyHeld(ampKey) || PestoLink.keyHeld(fireKey);
 }
 
@@ -538,7 +525,7 @@ void doIntermediate() {
   intakeMotor.set(0);
 }
 
-void doAiming(bool manual, int x, int y) {
+void doAiming(bool manual = false, int x = 0, int y = 0) {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(xAngleToWall());
   distanceSensorServo.write(sensorStowAngle - 10);
@@ -595,7 +582,7 @@ void doSpinUp() {
   intakeMotor.set(0);
 }
 
-void doFire(bool manual) {
+void doFire(bool manual = false) {
   if(!manual) {
     yAlignServo.write(yMeasureAngle);
     xAlignServo.write(xAngleToWall());
