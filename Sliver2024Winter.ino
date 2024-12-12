@@ -177,13 +177,10 @@ void updateState() {
       changeStateTo(scoreAmp);
     }
   }else {
-    if (state == aiming) {
-      if (PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
+    if (state == aiming && PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
         doneMeasuring = false;
         changeStateTo(measuring);
-      }
-    }
-    if (PestoLink.keyHeld(intakeKey)) {
+    }else if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
     }else if (PestoLink.keyHeld(revIntakeKey)) {
       changeStateTo(outtaking);
