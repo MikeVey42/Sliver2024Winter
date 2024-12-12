@@ -637,6 +637,7 @@ void runFlywheels(float power) {
 
 // Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
 float getTargetShooterAngle(float distance) {
+  print(distance);
   return 190;
 }
 
