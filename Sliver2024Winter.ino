@@ -231,6 +231,7 @@ void updateState() {
         doneMeasuring = false;
         echoing = false;
         changeStateTo(measuring);
+      }
     } else if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
     } else if (PestoLink.keyHeld(revIntakeKey)) {
@@ -267,7 +268,6 @@ void updateState() {
     } else if(PestoLink.keyHeld(terminateAuto)) {
       autoSequence = 0;
     }
-  }
   }
   scoreInputLastLoop = PestoLink.keyHeld(ampKey) || PestoLink.keyHeld(fireKey);
 }
