@@ -33,7 +33,7 @@ NoU_Motor indexerMotor(6);
 // Intake: for picking up notes
 NoU_Servo intakeServo(2);
     float intakeStartAngle = 0;
-NoU_Motor intakeMotor(5);
+NoU_Motor intakeMotor(3);
 
 // Autos
 int autoSequence = 0;
