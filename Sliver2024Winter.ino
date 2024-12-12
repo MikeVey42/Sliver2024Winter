@@ -179,6 +179,7 @@ void updateState() {
   }else {
     if (state == aiming && PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
         doneMeasuring = false;
+        echoing = false;
         changeStateTo(measuring);
     }else if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
@@ -341,10 +342,8 @@ void doMeasuring() {
   if (stateTime() < 3) {
     digitalWrite(trigPin, LOW);
     echoing = false;
-    print(-1.0);
   }else if (stateTime() < 13) {
     digitalWrite(trigPin, HIGH);
-    print(-2.0);
   }else {
     digitalWrite(trigPin, LOW);
     boolean signal = digitalRead(echoPin);
@@ -352,14 +351,10 @@ void doMeasuring() {
       echoing = true;
       startEcho = millis();
     }
-    if (echoing) {
-      print(-4.0);
-    }else {
-      print(-3.0);
-    }
     if (echoing && !signal) {
       float distance = (millis() - startEcho) * .0343;
       targetYAngle = getTargetShooterAngle(distance);
+      print(distance);
       doneMeasuring = true;
     }
   }
@@ -423,9 +418,6 @@ void runFlywheels(float power) {
 
 // Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
 float getTargetShooterAngle(float distance) {
-  char result[8];
-  dtostrf(distance, 6, 2, result);
-  PestoLink.print(result);
   return 190;
 }
 
