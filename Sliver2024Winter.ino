@@ -32,7 +32,7 @@ NoU_Motor indexerMotor(6);
 // Intake: for picking up notes
 NoU_Servo intakeServo(2);
     float intakeStartAngle = 0;
-NoU_Motor intakeMotor(5);
+NoU_Motor intakeMotor(3);
 
 // Autos
 int autoSequence = 0;
@@ -127,8 +127,6 @@ void loop() {
 
   updateState();
   performState();
-
-  autoControl();
     
   // Wait until the end of the loop to update components to reduce glitches
   drivetrain.curvatureDrive(throttle, rotation);
@@ -255,11 +253,11 @@ void performState() {
       break;
 
     case spinningUp:
-      doSpinUp();
+      doSpinUp(false);
       break;
 
     case firing:
-      doFire();
+      doFire(false);
       break;
 
     case prepareAmp:
@@ -421,7 +419,7 @@ void turnBy(bool clockwise, int degrees) {
     startDegrees = getYaw(); 
     turnStarted = true;
   }
-  if(abs(startDegrees - getYaw) < degrees - 5) {
+  if(abs(startDegrees - (int) getYaw) < degrees - 5) {
     if(clockwise) { rotation = 1; }
     else { rotation = -1; }
   }
@@ -484,6 +482,10 @@ void doIntermediate() {
 
   intakeServo.write(0);
   intakeMotor.set(0);
+}
+
+void doAiming() {
+  doAiming(false, 0, 0);
 }
 
 void doAiming(bool manual, int x, int y) {
