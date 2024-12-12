@@ -352,7 +352,7 @@ void doMeasuring() {
       startEcho = millis();
     }
     if (echoing && !signal) {
-      float distance = (millis() - startEcho) * .0343;
+      float distance = (millis() - startEcho) * .0343 / 2;
       targetYAngle = getTargetShooterAngle(distance);
       print(distance);
       doneMeasuring = true;
