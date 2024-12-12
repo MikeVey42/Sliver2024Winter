@@ -92,15 +92,14 @@ enum State{
 
 State state = stow;
 State targetState = stow;
-
 unsigned long lastStateChange = 0;
+bool scoreInputLastLoop = false;
 
 float targetYAngle = 180;
 
 unsigned long startEcho = 0;
 bool echoing = false;
 bool doneMeasuring = false;
-
 
 void setup() {
   NoU3.begin();
@@ -215,7 +214,7 @@ void updateState() {
     }
   }else {
     if (state == aiming) {
-      if (PestoLink.keyHeld(fireKey)) {
+      if (PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
         doneMeasuring = false;
         changeStateTo(measuring);
       }
@@ -224,7 +223,7 @@ void updateState() {
       changeStateTo(intaking);
     }else if (PestoLink.keyHeld(aimKey)) {
       changeStateTo(aiming);
-    }else if (PestoLink.keyHeld(ampKey)) {
+    }else if (PestoLink.keyHeld(ampKey) && !scoreInputLastLoop) {
       changeStateTo(prepareAmp);
     }else{
       changeStateTo(stow);
@@ -255,6 +254,8 @@ void updateState() {
       autoSequence = 0;
     }
   }
+
+  scoreInputLastLoop = PestoLink.keyHeld(ampKey) || PestoLink.keyHeld(fireKey);
 }
 
 void performState() {
