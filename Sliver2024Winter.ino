@@ -226,9 +226,7 @@ void updateState() {
 >>>>>>> 3d57298 (printing distance sensor values)
         doneMeasuring = false;
         changeStateTo(measuring);
-      }
-    }
-    if (PestoLink.keyHeld(intakeKey)) {
+    }else if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
     }else if (PestoLink.keyHeld(revIntakeKey)) {
       changeStateTo(outtaking);
