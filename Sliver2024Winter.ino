@@ -334,6 +334,7 @@ void performState() {
           break;
         case 8:
           doArmAuto(true);
+          break;
         case 9:
           doArmAuto(false);
           break;
@@ -549,7 +550,11 @@ void doIntermediate() {
   intakeMotor.set(0);
 }
 
-void doAiming(bool manual = false, int x = 0, int y = 0) {
+void doAiming() {
+  doAiming(false, 0, 0);
+}
+
+void doAiming(bool manual, int x, int y) {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(getXAngle());
   distanceSensorServo.write(sensorStowAngle - 10);
@@ -594,8 +599,14 @@ void doMeasuring() {
 }
 
 void doSpinUp() {
-  yAlignServo.write(targetYAngle);
-  xAlignServo.write(getXAngle());
+  doSpinUp(false);
+}
+
+void doSpinUp(bool manual) {
+  if(!manual) {
+    yAlignServo.write(targetYAngle);
+    xAlignServo.write(getXAngle());
+  }
   distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
@@ -606,7 +617,11 @@ void doSpinUp() {
   intakeMotor.set(0);
 }
 
-void doFire(bool manual = false) {
+void doFire() {
+  doFire(false);
+}
+
+void doFire(bool manual) {
   if(!manual) {
     yAlignServo.write(yMeasureAngle);
     xAlignServo.write(getXAngle());
