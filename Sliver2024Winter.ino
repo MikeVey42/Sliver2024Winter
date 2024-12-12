@@ -10,6 +10,13 @@ Key intakeKey = Key::J;
 Key revIntakeKey = Key::H;
 Key ampKey = Key::O;
 
+Key moveOnlyAuto = Key::Digit1;
+Key centerCloseAuto = Key::Digit2;
+Key centerFarAuto = Key::Digit3;
+Key sourceCloseAuto = Key::Digit4;
+Key sourceFarAuto = Key::Digit5;
+Key terminateAuto = Key::Digit0;
+
 // Drivetrain Motors
 NoU_Motor leftMotor(1);
 NoU_Motor rightMotor(8);
@@ -23,8 +30,13 @@ NoU_Motor indexerMotor(6);
 // Intake: for picking up notes
 NoU_Servo intakeServo(2);
     float intakeStartAngle = 0;
-NoU_Motor intakeMotor(3);
+NoU_Motor intakeMotor(5);
 
+// Autos
+int autoSequence = 0;
+int autoStartTime = 0;
+int autoTimer = 0;
+bool autoStarted = false;
 
 // Aiming: these are for aiming the shooter left/right and up/down
 NoU_Servo xAlignServo(1);
@@ -41,6 +53,8 @@ NoU_Servo yAlignServo(3);
 
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
+float throttle = 0;
+float rotation = 0;
 
 // GYRO
 float yaw_gyro_deg = 0;
@@ -60,7 +74,6 @@ boolean amp = false;
 unsigned long ampTime = 0;
 
 void setup() {
-    //EVERYONE SHOULD CHANGE "NoU3_Bluetooth" TO THE NAME OF THEIR ROBOT HERE BEFORE PAIRING THEIR ROBOT TO ANY LAPTOP
     NoU3.begin();
     PestoLink.begin("Sliver24v2");
     Serial.begin(115200);
@@ -70,11 +83,15 @@ void setup() {
 }
 
 void loop() {
+    throttle = 0;
+    rotation = 0;
+
+    autoTimer = millis() - autoStartTime;
 
     // This measures your batteries voltage and sends it to PestoLink
     // You could use this value for a lot of cool things, for example make LEDs flash when your batteries are low?
     float batteryVoltage = NoU3.getBatteryVoltage();
-    //PestoLink.printBatteryVoltage(batteryVoltage);
+    PestoLink.printBatteryVoltage(batteryVoltage);
 
     // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
     if (PestoLink.update()) {
@@ -89,6 +106,12 @@ void loop() {
     updateGyro();
 
     turretControl();
+
+    autoControl();
+    
+    // Wait until the end of the loop to update components to reduce glitches
+    drivetrain.curvatureDrive(throttle, rotation);
+
     // No need to mess with this code
     PestoLink.update();
     NoU3.updateServiceLight();
@@ -96,17 +119,20 @@ void loop() {
 }
 
 void drive() {
-  float throttle = PestoLink.getAxis(1);
-  float rotation = 0.9 * -PestoLink.getAxis(0);
-  
-  drivetrain.arcadeDrive(throttle, rotation);
+  throttle = PestoLink.getAxis(1);
+  rotation = 0.9 * -PestoLink.getAxis(0);
+}
+
+void autoDrive(float t, float r) {
+  throttle = t;
+  rotation = r;
 }
 
 void turretControl() {
   if (PestoLink.keyHeld(fireKey)) {
     prepareToShoot();
     fire();
-  }else {
+  } else {
     firing = false;
     indexerMotor.set(0);
     if (PestoLink.keyHeld(aimKey)) {
@@ -130,6 +156,93 @@ void turretControl() {
       }
     }
   }
+}
+
+void autoControl() {
+  if(PestoLink.keyHeld(moveOnlyAuto)) {
+    autoSequence = 1;
+  } else if(PestoLink.keyHeld(centerCloseAuto)) {
+    autoSequence = 2;
+  } else if(PestoLink.keyHeld(centerFarAuto)) {
+    autoSequence = 3;
+  } else if(PestoLink.keyHeld(sourceCloseAuto)) {
+    autoSequence = 4;
+  } else if(PestoLink.keyHeld(sourceFarAuto)) {
+    autoSequence = 5;
+  } else if(PestoLink.keyHeld(terminateAuto)) {
+    autoSequence = 0;
+  }
+
+  switch(autoSequence) {
+    case 1:
+      moveAuto();
+      break;
+    case 2:
+      centerAuto();
+      break;
+    case 3:
+      //centerAltAuto();
+      break;
+    case 4:
+      //sourceAuto();
+      break;
+    case 5:
+      //sourceAltAuto();
+      break;
+    default:
+      autoStarted = false;
+      return;
+  }
+}
+
+void moveAuto() {
+  if(autoStarted == false) {
+    autoStarted = true;
+    autoStartTime = millis();
+  } else if(autoTimer < 1000) {
+    throttle = -1;
+    return;
+  } else {
+    autoSequence = 0;
+    autoStarted = false;
+  }
+}
+
+void centerAuto() {
+  if(autoStarted == false) {
+    autoStarted = true;
+    autoStartTime = millis();
+  } else if(autoTimer < 2000) {
+    rearSubwooferShot();
+  } else if(autoTimer < 2200) {
+    stow();
+  } else if(autoTimer < 2500) {
+    intake();
+  } else if(autoTimer < 3500) {
+    throttle = -1;
+    intake();
+  } else if(autoTimer < 4500) {
+    throttle = 1;
+    intake();
+  } else if(autoTimer < 5000) {
+    stow();
+  } else if(autoTimer < 7000) {
+    rearSubwooferShot();
+  } else if(autoTimer < 8000) {
+    throttle = -1;
+    // TODO: Implement turnTo(degrees) function
+    intake();
+  } else if(autoTimer < 5500) {
+    throttle = 1;
+    intake();
+  } else {
+    autoSequence = 0;
+    autoStarted = false;
+  }
+}
+
+void rearSubwooferShot() {
+  // TODO: Use state machine shoot function with reverse subwoofer capability
 }
 
 // Returns the yaw in degrees, CCW positive, from -180 to 180
