@@ -50,7 +50,7 @@ NoU_Servo yAlignServo(3);
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
 NoU_Servo distanceSensorServo(4);
-    float sensorStowAngle = 90;
+    float sensorStowAngle = 60;
     float sensorMeasureAngle = 80;
     float sensorAutoAngle = 100;
 
@@ -116,7 +116,7 @@ void setup() {
 
   // Distance sensor 
   pinMode(trigPin, OUTPUT); // This is the trigger pin, it tells the sensor to fire
-  pinMode(echoPin, INPUT); // This is the echo pin, it reads the distance
+  pinMode(echoPin, INPUT_PULLUP); // This is the echo pin, it reads the distance
 
 }
 
