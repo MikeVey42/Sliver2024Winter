@@ -34,13 +34,13 @@ NoU_Servo yAlignServo(3);
     float yMeasureAngle = 160;
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
-NoU_Servo distanceSensorServo(3);
+NoU_Servo distanceSensorServo(4);
     float sensorStowAngle = 90;
-    float sensorMeasureAngle = 90;
-    float sensorAutoAngle = 90;
+    float sensorMeasureAngle = 80;
+    float sensorAutoAngle = 100;
 
-  int trigPin = 8;
-  int echoPin = 9;
+  int trigPin = 9;
+  int echoPin = 8;
 
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
