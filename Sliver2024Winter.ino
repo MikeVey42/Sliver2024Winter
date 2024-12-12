@@ -154,9 +154,9 @@ void loop() {
 
 void drive() {
   if (PestoLink.keyHeld(Key::W)) {
-    throttle = 1;
-  }else if (PestoLink.keyHeld(Key::S)) {
     throttle = -1;
+  }else if (PestoLink.keyHeld(Key::S)) {
+    throttle = 1;
   }else{
     throttle = 0;
   }
@@ -495,7 +495,7 @@ float getXAngle() {
 
 float getJoystickAngle() {
   float x = PestoLink.getAxis(2);
-  print(x);
+  //print(x);
   float y = PestoLink.getAxis(3);
 
   float rotation = atan2(x, -y);
@@ -515,9 +515,9 @@ void doStow() {
 }
 
 void doIntaking() {
-  yAlignServo.write(120);
-  xAlignServo.write(180);
-  distanceSensorServo.write(sensorStowAngle + 10);
+  yAlignServo.write(115);
+  xAlignServo.write(185);
+  distanceSensorServo.write(sensorStowAngle - 20);
 
   runFlywheels(-1);
   indexerMotor.set(-1);
@@ -580,10 +580,17 @@ void doMeasuring() {
   if (stateTime() < 3) {
     digitalWrite(trigPin, LOW);
     echoing = false;
+    //print(-1);
   }else if (stateTime() < 13) {
     digitalWrite(trigPin, HIGH);
+    print(-2);
   }else {
     digitalWrite(trigPin, LOW);
+    if (echoing) {
+      print(-4);
+    }else {
+      print(-3);
+    }
   }
   boolean signal = digitalRead(echoPin);
     if (!echoing && signal) {
@@ -593,8 +600,9 @@ void doMeasuring() {
     if (echoing && !signal) {
       float distance = (millis() - startEcho) * .0343 / 2;
       targetYAngle = getTargetShooterAngle(distance);
-      print(distance);
+      //print(distance);
       doneMeasuring = true;
+      print(-5);
     }
 }
 
