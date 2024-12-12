@@ -635,7 +635,7 @@ void doSpinUp(bool manual) {
     digitalWrite(trigPin, HIGH);
   }else {
     digitalWrite(trigPin, LOW);
-    boolean signal = digitalRead(echoPin);
+    boolean signal = !digitalRead(echoPin);
     if (!echoing && signal) {
       echoing = true;
       startEcho = millis();
