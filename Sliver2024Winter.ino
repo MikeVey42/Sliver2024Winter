@@ -56,6 +56,13 @@ NoU_Servo distanceSensorServo(4);
 
   int trigPin = 9;
   int echoPin = 8;
+NoU_Servo distanceSensorServo(4);
+    float sensorStowAngle = 60;
+    float sensorMeasureAngle = 80;
+    float sensorAutoAngle = 100;
+
+  int trigPin = 9;
+  int echoPin = 8;
 
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
