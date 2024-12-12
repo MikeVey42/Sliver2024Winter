@@ -152,9 +152,9 @@ void loop() {
 
 void drive() {
   if (PestoLink.keyHeld(Key::W)) {
-    throttle = throttle * 0.5 + 0.5 * -1;
+    throttle = -1;
   }else if (PestoLink.keyHeld(Key::S)) {
-    throttle = throttle * 0.5 + 0.5 * 1;
+    throttle = 1;
   }else{
     throttle = throttle * 0.5;
   }
