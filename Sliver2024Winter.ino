@@ -320,6 +320,7 @@ void performState() {
           break;
         case 8:
           doArmAuto(true);
+          break;
         case 9:
           doArmAuto(false);
           break;
@@ -452,7 +453,7 @@ void turnBy(bool clockwise, int degrees) {
     startDegrees = getYaw(); 
     turnStarted = true;
   }
-  if(abs(startDegrees - getYaw) < degrees - 5) {
+  if(abs(startDegrees - (int) getYaw) < degrees - 5) {
     if(clockwise) { rotation = 1; }
     else { rotation = -1; }
   }
@@ -525,7 +526,11 @@ void doIntermediate() {
   intakeMotor.set(0);
 }
 
-void doAiming(bool manual = false, int x = 0, int y = 0) {
+void doAiming() {
+  doAiming(false, 0, 0);
+}
+
+void doAiming(bool manual, int x, int y) {
   yAlignServo.write(yMeasureAngle);
   xAlignServo.write(xAngleToWall());
   distanceSensorServo.write(sensorStowAngle - 10);
@@ -570,8 +575,14 @@ void doMeasuring() {
 }
 
 void doSpinUp() {
-  yAlignServo.write(targetYAngle);
-  xAlignServo.write(xAngleToWall());
+  doSpinUp(false);
+}
+
+void doSpinUp(bool manual) {
+  if(!manual) {
+    yAlignServo.write(targetYAngle);
+    xAlignServo.write(xAngleToWall());
+  }
   distanceSensorServo.write(sensorStowAngle);
 
   leftFlywheel.set(1);
@@ -582,7 +593,11 @@ void doSpinUp() {
   intakeMotor.set(0);
 }
 
-void doFire(bool manual = false) {
+void doFire() {
+  doFire(false);
+}
+
+void doFire(bool manual) {
   if(!manual) {
     yAlignServo.write(yMeasureAngle);
     xAlignServo.write(xAngleToWall());
