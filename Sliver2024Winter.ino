@@ -15,7 +15,7 @@ NoU_Motor leftMotor(1);
 NoU_Motor rightMotor(8);
 
 // Flywheels: for launching notes
-NoU_Motor leftFlywheel(2);
+NoU_Motor leftFlywheel(5);
 NoU_Motor rightFlywheel(7);
 
 NoU_Motor indexerMotor(6);
@@ -34,13 +34,13 @@ NoU_Servo yAlignServo(3);
     float yMeasureAngle = 160;
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
-NoU_Servo distanceSensorServo(3);
+NoU_Servo distanceSensorServo(4);
     float sensorStowAngle = 90;
-    float sensorMeasureAngle = 90;
-    float sensorAutoAngle = 90;
+    float sensorMeasureAngle = 80;
+    float sensorAutoAngle = 100;
 
-  int trigPin = 8;
-  int echoPin = 9;
+  int trigPin = 9;
+  int echoPin = 8;
 
 // The Drivetrain object handles the arcade drive math for us
 NoU_Drivetrain drivetrain(&leftMotor, &rightMotor);
@@ -346,7 +346,7 @@ void doSpinUp() {
   xAlignServo.write(xAngleToWall());
   distanceSensorServo.write(sensorStowAngle);
 
-  leftFlywheel.set(-1);
+  leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
   indexerMotor.set(0);
 
@@ -359,7 +359,7 @@ void doFire() {
   xAlignServo.write(xAngleToWall());
   distanceSensorServo.write(sensorStowAngle);
 
-  leftFlywheel.set(-1);
+  leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
   indexerMotor.set(1);
 
@@ -393,7 +393,7 @@ void doScoreAmp() {
 
 // Runs both flywheels. -1 is intake, 1 is outtake/shoot.
 void runFlywheels(float power) {
-  leftFlywheel.set(-power);
+  leftFlywheel.set(power);
   rightFlywheel.set(-power);
 }
 
