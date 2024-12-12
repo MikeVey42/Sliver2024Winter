@@ -84,7 +84,6 @@ enum State{
   outtaking,
   intermediate,
   aiming,
-  measuring,
   spinningUp,
   firing,
   prepareAmp,
@@ -101,7 +100,6 @@ float targetYAngle = 180;
 
 unsigned long startEcho = 0;
 bool echoing = false;
-bool doneMeasuring = false;
 
 void setup() {
   NoU3.begin();
@@ -203,10 +201,6 @@ void updateState() {
     else if (stateTime() > 1000) {
       changeStateTo(firing);
     }
-  }else if (state == measuring) {
-    if (doneMeasuring) {
-      changeStateTo(spinningUp);
-    }
   }else if (state == scoreAmp) {
     if (stateTime() > 1000) {
       targetState = stow;
@@ -228,9 +222,8 @@ void updateState() {
   }else {
     if (state == aiming) {
       if (PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
-        doneMeasuring = false;
-        echoing = false;
-        changeStateTo(measuring);
+        measure();
+        changeStateTo(spinningUp);
       }
     } else if (PestoLink.keyHeld(intakeKey)) {
       changeStateTo(intaking);
@@ -293,10 +286,6 @@ void performState() {
 
     case aiming:
       doAiming();
-      break;
-
-    case measuring:
-      doMeasuring();
       break;
 
     case spinningUp:
@@ -566,44 +555,16 @@ void doAiming(bool manual, int x, int y) {
   intakeMotor.set(0);
 }
 
-void doMeasuring() {
-  yAlignServo.write(yMeasureAngle);
-  xAlignServo.write(getXAngle());
-  distanceSensorServo.write(sensorStowAngle);
+void measure() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
 
-  runFlywheels(0);
-  indexerMotor.set(0);
-
-  intakeServo.write(0);
-  intakeMotor.set(0);
-
-  if (stateTime() < 3) {
-    digitalWrite(trigPin, LOW);
-    echoing = false;
-    //print(-1);
-  }else if (stateTime() < 13) {
-    digitalWrite(trigPin, HIGH);
-    print(-2);
-  }else {
-    digitalWrite(trigPin, LOW);
-    if (echoing) {
-      print(-4);
-    }else {
-      print(-3);
-    }
-  }
-  boolean signal = digitalRead(echoPin);
-    if (!echoing && signal) {
-      echoing = true;
-      startEcho = millis();
-    }
-    if (echoing && !signal) {
-      float distance = (millis() - startEcho) * .0343 / 2;
-      targetYAngle = getTargetShooterAngle(distance);
-      //print(distance);
-      doneMeasuring = true;
-      print(-5);
-    }
+  float duration = pulseIn(echoPin, HIGH);
+  float distance = (duration) * .0343 / 2;
+  targetYAngle = getTargetShooterAngle(distance);
 }
 
 void doSpinUp() {
