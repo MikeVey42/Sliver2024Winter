@@ -20,6 +20,9 @@ Key armRedAuto = Key::Digit8;
 Key armBlueAuto = Key::Digit9;
 Key terminateAuto = Key::Digit0;
 
+Key increaseAngleKey = Key::T;
+Key decreaseAngleKey = Key::G;
+
 // Drivetrain Motors
 NoU_Motor leftMotor(1);
 NoU_Motor rightMotor(8);
@@ -97,6 +100,7 @@ unsigned long lastStateChange = 0;
 bool scoreInputLastLoop = false;
 
 float targetYAngle = 180;
+bool lastChangeAngle;
 
 unsigned long startEcho = 0;
 bool echoing = false;
@@ -126,6 +130,17 @@ void loop() {
   float batteryVoltage = NoU3.getBatteryVoltage();
   //PestoLink.printBatteryVoltage(batteryVoltage);
 
+  if (PestoLink.keyHeld(decreaseAngleKey) && !lastChangeAngle) {
+    targetYAngle--;
+    print(targetYAngle);
+  }else if (PestoLink.keyHeld(increaseAngleKey) && !lastChangeAngle) {
+    targetYAngle++;
+    print(targetYAngle);
+  }
+  lastChangeAngle = PestoLink.keyHeld(decreaseAngleKey) || PestoLink.keyHeld(increaseAngleKey);
+
+  print((float)targetYAngle);
+
   // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
   if (PestoLink.update()) {
     
@@ -148,13 +163,15 @@ void loop() {
   PestoLink.update();
   NoU3.updateServiceLight();
   NoU3.updateIMUs();
+
+  
 }
 
 void drive() {
   if (PestoLink.keyHeld(Key::W)) {
-    throttle = throttle * 0.5 + 0.5 * -1;
+    throttle = -1;
   }else if (PestoLink.keyHeld(Key::S)) {
-    throttle = throttle * 0.5 + 0.5 * 1;
+    throttle = 1;
   }else{
     throttle = throttle * 0.5;
   }
@@ -475,7 +492,7 @@ float getXAngle() {
   float currentYaw = getYaw();
   float joystickInput = getJoystickAngle();
   float targetAngle = (xStartAngle - currentYaw) + joystickInput;
-  if (targetAngle > -10 && targetAngle < 190) {
+  if (targetAngle > -10 && targetAngle < 190) && false {
       return targetAngle;
   }else {
       return 0;
