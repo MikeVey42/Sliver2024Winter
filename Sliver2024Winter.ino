@@ -159,7 +159,7 @@ void updateState() {
       changeStateTo(firing);
     }
   }else if (state == measuring) {
-    if (stateTime() > 50) {
+    if (doneMeasuring) {
       changeStateTo(spinningUp);
     }
   }else if (state == scoreAmp) {
@@ -324,6 +324,7 @@ void doMeasuring() {
 
   if (stateTime() < 3) {
     digitalWrite(trigPin, LOW);
+    echoing = false;
   }else if (stateTime() < 13) {
     digitalWrite(trigPin, HIGH);
   }else {
@@ -355,7 +356,7 @@ void doSpinUp() {
 }
 
 void doFire() {
-  yAlignServo.write(yMeasureAngle);
+  yAlignServo.write(targetYAngle);
   xAlignServo.write(xAngleToWall());
   distanceSensorServo.write(sensorStowAngle);
 
