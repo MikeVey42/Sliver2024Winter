@@ -51,8 +51,8 @@ NoU_Servo yAlignServo(3);
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
 NoU_Servo distanceSensorServo(4);
-    float sensorStowAngle = 60;
-    float sensorMeasureAngle = 80;
+    float sensorStowAngle = 90;
+    float sensorMeasureAngle = 90;
     float sensorAutoAngle = 100;
 
   int trigPin = 9;
