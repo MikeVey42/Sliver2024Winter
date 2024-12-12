@@ -630,14 +630,21 @@ void doSpinUp(bool manual) {
   if (stateTime() < 3) {
     digitalWrite(trigPin, LOW);
     echoing = false;
+    print(-1.0);
   }else if (stateTime() < 13) {
     digitalWrite(trigPin, HIGH);
+    print(-2.0);
   }else {
     digitalWrite(trigPin, LOW);
     boolean signal = digitalRead(echoPin);
     if (!echoing && signal) {
       echoing = true;
       startEcho = millis();
+    }
+    if (echoing) {
+      print(-4.0);
+    }else {
+      print(-3.0);
     }
     if (echoing && !signal) {
       float distance = (millis() - startEcho) * .0343;
@@ -765,4 +772,10 @@ float wrapYaw(float currentYaw) {
     previousYaw = currentYaw;
 
     return wrappedYaw;
+}
+
+void print (float value) {
+  char result[8];
+  dtostrf(value, 6, 2, result);
+  PestoLink.print(result);
 }
