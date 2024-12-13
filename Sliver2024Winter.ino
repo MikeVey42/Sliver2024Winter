@@ -139,8 +139,6 @@ void loop() {
   }
   lastChangeAngle = PestoLink.keyHeld(decreaseAngleKey) || PestoLink.keyHeld(increaseAngleKey);
 
-  print((float)targetYAngle);
-
   // Here we decide what the throttle and rotation direction will be based on gamepad inputs   
   if (PestoLink.update()) {
     
@@ -492,10 +490,10 @@ float getXAngle() {
   float currentYaw = getYaw();
   float joystickInput = getJoystickAngle();
   float targetAngle = (xStartAngle - currentYaw) + joystickInput;
-  if (targetAngle > -10 && targetAngle < 190) && false {
+  if (targetAngle > -10 && targetAngle < 190 && false) {
       return targetAngle;
   }else {
-      return 0;
+      return -10;
   }
 }
 
@@ -609,7 +607,7 @@ void doFire() {
 
 void doFire(bool manual) {
   if(!manual) {
-    yAlignServo.write(yMeasureAngle);
+    yAlignServo.write(targetYAngle);
     xAlignServo.write(getXAngle());
   }
   distanceSensorServo.write(sensorStowAngle);
