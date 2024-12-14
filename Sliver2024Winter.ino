@@ -525,7 +525,7 @@ float getYaw() {
 // If the robot is in front of the speaker, this will aim it towards the speaker
 float getXAngle() {
   float currentYaw = getYaw();
-  float targetYaw = currentYaw - getJoystickAngle();
+  float targetYaw = currentYaw + getJoystickAngle();
   if (targetYaw > 180) {
     targetYaw -= 360;
   }else if (targetYaw < -180) {
