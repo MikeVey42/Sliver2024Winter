@@ -256,6 +256,7 @@ void updateState() {
     if(autoSequence == 0) {
       targetState = stow;
       changeStateTo(intermediate);
+      updateAutos();
     }
   }else {
     if (state == aiming) {
@@ -277,6 +278,12 @@ void updateState() {
       changeStateTo(stow);
     }
 
+    updateAutos();
+  }
+  scoreInputLastLoop = PestoLink.keyHeld(ampKey) || PestoLink.keyHeld(fireKey);
+}
+
+void updateAutos() {
     if(PestoLink.keyHeld(moveOnlyAuto)) {
       autoSequence = 1;
       changeStateTo(autonomous);
@@ -301,8 +308,6 @@ void updateState() {
     } else if(PestoLink.keyHeld(terminateAuto)) {
       autoSequence = 0;
     }
-  }
-  scoreInputLastLoop = PestoLink.keyHeld(ampKey) || PestoLink.keyHeld(fireKey);
 }
 
 void performState() {
