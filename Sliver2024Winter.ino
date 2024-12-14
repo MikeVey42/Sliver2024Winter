@@ -99,6 +99,9 @@ State targetState = stow;
 unsigned long lastStateChange = 0;
 bool scoreInputLastLoop = false;
 
+unsigned long lastStartDrive = 0;
+bool driving = false;
+
 float targetYAngle = 180;
 bool lastChangeAngle;
 
@@ -164,20 +167,42 @@ void loop() {
 }
 
 void drive() {
-  if (PestoLink.keyHeld(Key::W)) {
-    throttle = -1;
-  }else if (PestoLink.keyHeld(Key::S)) {
-    throttle = 1;
-  }else{
-    throttle = throttle * 0.5;
+  if (state == intaking && stateTime() < 0.25 && throttle == 0 && rotation == 0) {
+    throttle = 0;
+    rotation = 0;
+    driving = false;
+    return;
   }
 
-  if (PestoLink.keyHeld(Key::A)) {
+  bool W = PestoLink.keyHeld(Key::W);
+  bool S = PestoLink.keyHeld(Key::S);
+  bool A = PestoLink.keyHeld(Key::A);
+  bool D = PestoLink.keyHeld(Key::D);
+
+  if (!driving && (W || S || A || D)) {
+    lastStartDrive = millis();
+  }
+
+  if (W) {
+    throttle = -1;
+    driving = true;
+  }else if (S) {
+    throttle = 1;
+    driving = true;
+  }else{
+    throttle = throttle * 0.5;
+    driving = false;
+  }
+
+  if (A) {
     rotation = 0.9;
-  }else if (PestoLink.keyHeld(Key::D)) {
+    driving = true;
+  }else if (D) {
     rotation = -0.9;
+    driving = true;
   }else{
     rotation = 0;
+    driving = false;
   }
 }
 
@@ -239,7 +264,9 @@ void updateState() {
         changeStateTo(spinningUp);
       }
     } else if (PestoLink.keyHeld(intakeKey)) {
-      changeStateTo(intaking);
+      if (millis() - lastStartDrive > 250) {
+        changeStateTo(intaking);
+      }
     } else if (PestoLink.keyHeld(revIntakeKey)) {
       changeStateTo(outtaking);
     } else if (PestoLink.keyHeld(aimKey)) {
@@ -661,7 +688,14 @@ void runFlywheels(float power) {
 // Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
 float getTargetShooterAngle(float distance) {
   print(distance);
-  return targetYAngle;
+  if(distance > 92.35) {
+    return 150;
+  }else {
+    float a = 0.00576007 * distance * distance;
+    float b = -1.06389 * distance;
+    float c = 199.12046;
+    return a + b + c;
+  }
 }
 
 void updateGyro() {
