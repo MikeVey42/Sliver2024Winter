@@ -389,9 +389,9 @@ void performState() {
 void doArmAuto(bool redAlliance) {
   isRed = redAlliance;
   if(stateTime() < 1000) {
-    doAiming(true, 0, yStowAngle);
+    doAiming(true, -10, yStowAngle);
   } else {
-    doAiming(true, 0, 170); // Prep for rear subwoofer shot
+    doAiming(true, -10, 170); // Prep for rear subwoofer shot
   }
 }
 
@@ -429,7 +429,7 @@ void centerAuto() {
   } else if(autoTimer < 5000) {
     doStow();
   } else if(autoTimer < 6000) {
-    doAiming(true, 0, 190); // Prep for rear subwoofer shot
+    doAiming(true, -10, 170); // Prep for rear subwoofer shot
     doSpinUp(true);
   } else if(autoTimer < 7000) {
     doFire(true);
@@ -450,7 +450,7 @@ void centerAuto() {
     turnBy(!isRed, 45);
     doIntaking();
   } else if(autoTimer < 10000) {
-    doAiming(true, 0, 170); // Prep for rear subwoofer shot
+    doAiming(true, -10, 170); // Prep for rear subwoofer shot
     doSpinUp(true);
   } else if(autoTimer < 11000) {
     doFire(true);
@@ -487,7 +487,7 @@ void sourceAuto() {
   } else if(autoTimer < 5000) {
     doStow();
   } else if(autoTimer < 6000) {
-    doAiming(true, 0, 190); // Prep for rear subwoofer shot
+    doAiming(true, -10, 170); // Prep for rear subwoofer shot
     doSpinUp(true);
   } else if(autoTimer < 7000) {
     doFire(true);
