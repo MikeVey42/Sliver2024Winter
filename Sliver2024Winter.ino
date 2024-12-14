@@ -49,12 +49,12 @@ bool isRed = true;
 NoU_Servo xAlignServo(1);
     float xStartAngle = -10;
 NoU_Servo yAlignServo(3);
-    float yStowAngle = 160;
-    float yMeasureAngle = 160;
+    float yStowAngle = 130;
+    float yMeasureAngle = 130;
 
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
 NoU_Servo distanceSensorServo(4);
-    float sensorStowAngle = 90;
+    float sensorStowAngle = 145;
     float sensorMeasureAngle = 90;
     float sensorAutoAngle = 100;
 
@@ -161,8 +161,6 @@ void loop() {
   PestoLink.update();
   NoU3.updateServiceLight();
   NoU3.updateIMUs();
-
-  
 }
 
 void drive() {
@@ -320,6 +318,7 @@ void performState() {
       break;
     
     case autonomous:
+      print(autoSequence);
       switch(autoSequence) {
         case 1:
           moveAuto();
@@ -355,7 +354,11 @@ void performState() {
 
 void doArmAuto(bool redAlliance) {
   isRed = redAlliance;
-  doAiming(true, 0, 190); // Prep for rear subwoofer shot
+  if(stateTime() < 1000) {
+    doAiming(true, 0, yStowAngle);
+  } else {
+    doAiming(true, 0, 170); // Prep for rear subwoofer shot
+  }
 }
 
 void moveAuto() {
@@ -413,7 +416,7 @@ void centerAuto() {
     turnBy(!isRed, 45);
     doIntaking();
   } else if(autoTimer < 10000) {
-    doAiming(true, 0, 190); // Prep for rear subwoofer shot
+    doAiming(true, 0, 170); // Prep for rear subwoofer shot
     doSpinUp(true);
   } else if(autoTimer < 11000) {
     doFire(true);
@@ -519,9 +522,9 @@ void doStow() {
 }
 
 void doIntaking() {
-  yAlignServo.write(115);
+  yAlignServo.write(80);
   xAlignServo.write(185);
-  distanceSensorServo.write(sensorStowAngle - 20);
+  distanceSensorServo.write(sensorStowAngle);
 
   runFlywheels(-1);
   indexerMotor.set(-1);
@@ -531,7 +534,7 @@ void doIntaking() {
 }
 
 void doOuttaking() {
-  yAlignServo.write(yStowAngle);
+  yAlignServo.write(yStowAngle - 20);
   xAlignServo.write(180);
   distanceSensorServo.write(sensorStowAngle);
 
@@ -559,9 +562,14 @@ void doAiming() {
 }
 
 void doAiming(bool manual, int x, int y) {
-  yAlignServo.write(yMeasureAngle);
-  xAlignServo.write(getXAngle());
-  distanceSensorServo.write(sensorStowAngle - 10);
+  if(manual) {
+    yAlignServo.write(y);
+    xAlignServo.write(x);
+  } else {
+    yAlignServo.write(yMeasureAngle);
+    xAlignServo.write(getXAngle());
+  }
+  distanceSensorServo.write(sensorMeasureAngle);
 
   runFlywheels(0);
   indexerMotor.set(0);
@@ -591,7 +599,7 @@ void doSpinUp(bool manual) {
     yAlignServo.write(targetYAngle);
     xAlignServo.write(getXAngle());
   }
-  distanceSensorServo.write(sensorStowAngle);
+  distanceSensorServo.write(sensorMeasureAngle);
 
   leftFlywheel.set(1);
   rightFlywheel.set(-0.5);
@@ -621,7 +629,7 @@ void doFire(bool manual) {
 }
 
 void doPrepareAmp() {
-  yAlignServo.write(175);
+  yAlignServo.write(145);
   xAlignServo.write(xStartAngle);
   distanceSensorServo.write(sensorStowAngle);
 
@@ -633,7 +641,7 @@ void doPrepareAmp() {
 }
 
 void doScoreAmp() {
-  yAlignServo.write(175);
+  yAlignServo.write(145);
   xAlignServo.write(xStartAngle);
   distanceSensorServo.write(sensorStowAngle);
 
@@ -653,7 +661,7 @@ void runFlywheels(float power) {
 // Uses a regression to find the ideal vertical (y) angle for the shooter given a distance
 float getTargetShooterAngle(float distance) {
   print(distance);
-  return 190;
+  return targetYAngle;
 }
 
 void updateGyro() {
