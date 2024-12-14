@@ -531,7 +531,7 @@ float getXAngle() {
   }else if (targetYaw < -180) {
     targetYaw += 360;
   }
-  float targetAngle = (xStartAngle - currentYaw);
+  float targetAngle = (xStartAngle - targetYaw);
   if (targetAngle > -10 && targetAngle < 190) {
       return targetAngle;
   }else {
