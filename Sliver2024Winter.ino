@@ -256,8 +256,8 @@ void updateState() {
     if(autoSequence == 0) {
       targetState = stow;
       changeStateTo(intermediate);
-      updateAutos();
     }
+    updateAutos();
   }else {
     if (state == aiming) {
       if (PestoLink.keyHeld(fireKey) && !scoreInputLastLoop) {
