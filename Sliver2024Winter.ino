@@ -520,7 +520,7 @@ float getXAngle() {
   float currentYaw = getYaw();
   float joystickInput = getJoystickAngle();
   float targetAngle = (xStartAngle - currentYaw) + joystickInput;
-  if (targetAngle > -10 && targetAngle < 190 && false) {
+  if (targetAngle > -10 && targetAngle < 190) {
       return targetAngle;
   }else {
       return -10;
@@ -528,9 +528,9 @@ float getXAngle() {
 }
 
 float getJoystickAngle() {
-  float x = PestoLink.getAxis(2);
+  float x = PestoLink.getAxis(0);
   //print(x);
-  float y = PestoLink.getAxis(3);
+  float y = PestoLink.getAxis(1);
 
   float rotation = atan2(x, -y);
   return rotation;
@@ -615,6 +615,7 @@ float measureOnce() {
   float duration = pulseIn(echoPin, HIGH);
   float distance = (duration) * .0343 / 2;
   
+  return distance;
 }
 
 void measure() {
@@ -624,7 +625,7 @@ void measure() {
   int mean = 0;
   for (int i = 0; i < 3; i++) {
     measurements[i] = measureOnce();
-    mean = mean + measurements[i]
+    mean = mean + measurements[i];
   }
   mean /= 3;
   int distances[3];
@@ -632,15 +633,15 @@ void measure() {
     distances[i] = abs(mean - measurements[i]);
   }
 
-  float finalDisance = 0;
+  float finalDistance = 0;
 
   // Throw out the worst value (whichever is furthest from the mean)
   if (distances[0] > distances[1] && distances[0] > distances[2]) {
-    finalDisance = (measurements[1] + measurements[2]) / 2;
+    finalDistance = (measurements[1] + measurements[2]) / 2;
   }else if (distances[1] > distances[0] && distances[1] > distances[2]) {
-    finalDisance = (measurements[0] + measurements[2]) / 2;
+    finalDistance = (measurements[0] + measurements[2]) / 2;
   }else {
-    finalDisance = (measurements[0] + measurements[1]) / 2;
+    finalDistance = (measurements[0] + measurements[1]) / 2;
   }
   targetYAngle = getTargetShooterAngle(finalDistance);
 }
