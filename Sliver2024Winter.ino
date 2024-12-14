@@ -533,7 +533,11 @@ float getJoystickAngle() {
   float y = PestoLink.getAxis(1);
 
   float rotation = atan2(x, -y);
-  return rotation * 180.0 / 3.1415926;
+  rotation *= (180.0 / 3.1415926);
+  if (rotation > 180) {
+    rotation -= 360;
+  }
+  return rotation;
 }
 
 void doStow() {
