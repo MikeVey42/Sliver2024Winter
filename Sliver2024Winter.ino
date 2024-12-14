@@ -533,7 +533,7 @@ float getJoystickAngle() {
   float y = PestoLink.getAxis(1);
 
   float rotation = atan2(x, -y);
-  return rotation;
+  return rotation * 180.0 / 3.1415926;
 }
 
 void doStow() {
@@ -619,31 +619,31 @@ float measureOnce() {
 }
 
 void measure() {
-  // Measure multiple times so we can throw out outliers.
-  // This compensates for the sensor being highly consistent most of the time, but occaisonally being WAY off
-  int measurements[3];
-  int mean = 0;
-  for (int i = 0; i < 3; i++) {
-    measurements[i] = measureOnce();
-    mean = mean + measurements[i];
-  }
-  mean /= 3;
-  int distances[3];
-  for (int i = 0; i < 3; i++) {
-    distances[i] = abs(mean - measurements[i]);
-  }
+  // // Measure multiple times so we can throw out outliers.
+  // // This compensates for the sensor being highly consistent most of the time, but occaisonally being WAY off
+  // int measurements[3];
+  // int mean = 0;
+  // for (int i = 0; i < 3; i++) {
+  //   measurements[i] = measureOnce();
+  //   mean = mean + measurements[i];
+  // }
+  // mean /= 3;
+  // int distances[3];
+  // for (int i = 0; i < 3; i++) {
+  //   distances[i] = abs(mean - measurements[i]);
+  // }
 
-  float finalDistance = 0;
+  // float finalDistance = 0;
 
-  // Throw out the worst value (whichever is furthest from the mean)
-  if (distances[0] > distances[1] && distances[0] > distances[2]) {
-    finalDistance = (measurements[1] + measurements[2]) / 2;
-  }else if (distances[1] > distances[0] && distances[1] > distances[2]) {
-    finalDistance = (measurements[0] + measurements[2]) / 2;
-  }else {
-    finalDistance = (measurements[0] + measurements[1]) / 2;
-  }
-  targetYAngle = getTargetShooterAngle(finalDistance);
+  // // Throw out the worst value (whichever is furthest from the mean)
+  // if (distances[0] > distances[1] && distances[0] > distances[2]) {
+  //   finalDistance = (measurements[1] + measurements[2]) / 2;
+  // }else if (distances[1] > distances[0] && distances[1] > distances[2]) {
+  //   finalDistance = (measurements[0] + measurements[2]) / 2;
+  // }else {
+  //   finalDistance = (measurements[0] + measurements[1]) / 2;
+  // }
+  targetYAngle = getTargetShooterAngle(measureOnce());
 }
 
 void doSpinUp() {
