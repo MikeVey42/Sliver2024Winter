@@ -167,7 +167,7 @@ void loop() {
 }
 
 void drive() {
-  if (state == intaking && stateTime() < 0.25 && throttle == 0 && rotation == 0) {
+  if ((state == intaking || state == outtaking) && stateTime() < 0.25 && throttle == 0 && rotation == 0) {
     throttle = 0;
     rotation = 0;
     driving = false;
@@ -269,7 +269,9 @@ void updateState() {
         changeStateTo(intaking);
       }
     } else if (PestoLink.keyHeld(revIntakeKey)) {
-      changeStateTo(outtaking);
+      if (millis() - lastStartDrive > 250) {
+        changeStateTo(outtaking);
+      }
     } else if (PestoLink.keyHeld(aimKey)) {
       changeStateTo(aiming);
     } else if (PestoLink.keyHeld(ampKey) && !scoreInputLastLoop) {
@@ -523,8 +525,13 @@ float getYaw() {
 // If the robot is in front of the speaker, this will aim it towards the speaker
 float getXAngle() {
   float currentYaw = getYaw();
-  float joystickInput = getJoystickAngle();
-  float targetAngle = (xStartAngle - currentYaw) + joystickInput;
+  float targetYaw = currentYaw - getJoystickAngle();
+  if (targetYaw > 180) {
+    targetYaw -= 360;
+  }else if (targetYaw < -180) {
+    targetYaw += 360;
+  }
+  float targetAngle = (xStartAngle - currentYaw);
   if (targetAngle > -10 && targetAngle < 190) {
       return targetAngle;
   }else {
