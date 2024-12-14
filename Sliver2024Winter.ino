@@ -605,7 +605,7 @@ void doAiming(bool manual, int x, int y) {
   intakeMotor.set(0);
 }
 
-void measure() {
+float measureOnce() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
@@ -614,7 +614,35 @@ void measure() {
 
   float duration = pulseIn(echoPin, HIGH);
   float distance = (duration) * .0343 / 2;
-  targetYAngle = getTargetShooterAngle(distance);
+  
+}
+
+void measure() {
+  // Measure multiple times so we can throw out outliers.
+  // This compensates for the sensor being highly consistent most of the time, but occaisonally being WAY off
+  int measurements[3];
+  int mean = 0;
+  for (int i = 0; i < 3; i++) {
+    measurements[i] = measureOnce();
+    mean = mean + measurements[i]
+  }
+  mean /= 3;
+  int distances[3];
+  for (int i = 0; i < 3; i++) {
+    distances[i] = abs(mean - measurements[i]);
+  }
+
+  float finalDisance = 0;
+
+  // Throw out the worst value (whichever is furthest from the mean)
+  if (distances[0] > distances[1] && distances[0] > distances[2]) {
+    finalDisance = (measurements[1] + measurements[2]) / 2;
+  }else if (distances[1] > distances[0] && distances[1] > distances[2]) {
+    finalDisance = (measurements[0] + measurements[2]) / 2;
+  }else {
+    finalDisance = (measurements[0] + measurements[1]) / 2;
+  }
+  targetYAngle = getTargetShooterAngle(finalDistance);
 }
 
 void doSpinUp() {
