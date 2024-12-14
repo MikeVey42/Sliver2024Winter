@@ -55,7 +55,7 @@ NoU_Servo yAlignServo(3);
 // Sensor Servo: this is for changing the angle of the distance sensor to be horizontal with the ground 
 NoU_Servo distanceSensorServo(4);
     float sensorStowAngle = 145;
-    float sensorMeasureAngle = 90;
+    float sensorMeasureAngle = 65;
     float sensorAutoAngle = 100;
 
   int trigPin = 9;
@@ -524,6 +524,7 @@ float getYaw() {
 // Moves the shooter to aim directly towards the alliance wall.
 // If the robot is in front of the speaker, this will aim it towards the speaker
 float getXAngle() {
+  return -10; // Regression
   float currentYaw = getYaw();
   float targetYaw = currentYaw + getJoystickAngle();
   if (targetYaw > 180) {
@@ -570,7 +571,7 @@ void doStow() {
 }
 
 void doIntaking() {
-  yAlignServo.write(80);
+  yAlignServo.write(73);
   xAlignServo.write(185);
   distanceSensorServo.write(sensorStowAngle);
 
@@ -664,7 +665,8 @@ void measure() {
   // }else {
   //   finalDistance = (measurements[0] + measurements[1]) / 2;
   // }
-  targetYAngle = getTargetShooterAngle(measureOnce());
+  //targetYAngle = getTargetShooterAngle(measureOnce());
+  print(measureOnce());
 }
 
 void doSpinUp() {
